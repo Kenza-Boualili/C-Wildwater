@@ -138,7 +138,7 @@ NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees) {
 }
 
 
-DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, const char* identifiant) {
+DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
     if (racine == NULL) {
         return NULL; 
     }
