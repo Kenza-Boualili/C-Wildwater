@@ -165,6 +165,8 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte);
     } else if (type_histo == 2) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite);
+    } else if (type_histo == 3) { 
+        fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max, racine->donnees->total_capte, racine->donnees->total_traite);
     }
   parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
 }
