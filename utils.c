@@ -2,6 +2,15 @@
 #include <stdlib.h>
 
 int comparerChaines(char* chaine1, char* chaine2) {
+    if (chaine1 == NULL && chaine2 == NULL){
+        return 0;
+    }
+    if (chaine1 == NULL){
+        return -1;
+    }
+    if (chaine2 == NULL){
+        return 1;
+    }
     int i = 0;
     while (chaine1[i] != '\0' && chaine2[i] != '\0') {
         if (chaine1[i] < chaine2[i]) {
