@@ -67,7 +67,31 @@ int main(int nombre_arguments, char* arguments[]) {
         }
     } else if(comparerChaines(commande, "leaks") == 0) {
         char* id_usine = argument;
+        FILE* f = NULL;           
+        int nouveau_fichier = 0; 
+
+        f = fopen("leaks.dat", "r");
         
+        if (f == NULL) {
+            nouveau_fichier = 1;
+        } else {
+            fclose(f);
+            f = NULL;
+            nouveau_fichier = 0;
+        }
+        
+        f = fopen("leaks.dat", "a");
+        
+        if (f == NULL) {
+            printf("Erreur : Impossible d'écrire dans leaks.dat\n");
+            libererAVLUsine(avl_usines);
+            libererAVLRecherche(avl_recherche);
+            return 1;
+        }
+
+        if (nouveau_fichier == 1) {
+            fprintf(f, "identifier;Leak volume (M.m3.year-1)\n");
+        }
         NoeudDistribution* noeud_usine = rechercherNoeud(avl_recherche, id_usine);
         DonneesUsine* infos_usine = rechercherUsine(avl_usines, id_usine);
 
@@ -83,16 +107,14 @@ int main(int nombre_arguments, char* arguments[]) {
             for(int i=0; i<noeud_usine->nb_enfants; i++) {
                 fuites_totales += calculerFuites(noeud_usine->enfants[i], volume_par_sortie);
             }
+            fprintf(f, "%s;%.2f\n", id_usine, fuites_totales / 1000.0); 
 
-            printf("%.2f", fuites_totales); 
         } else {
-            printf("Usine %s introuvable\n", id_usine);
-            libererAVLUsine(avl_usines);
-            libererAVLRecherche(avl_recherche);
-            return 1;
+            fprintf(f, "%s;-1\n", id_usine);
+            printf("Usine %s introuvable (valeur -1 enregistree)\n", id_usine);
         }
+        fclose(f);
     }
-
     libererAVLUsine(avl_usines);
     libererAVLRecherche(avl_recherche);
 
