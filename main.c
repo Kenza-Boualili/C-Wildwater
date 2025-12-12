@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "avl_usines.h"
 #include "avl_recherche.h"
 #include "lecture_csv.h"
