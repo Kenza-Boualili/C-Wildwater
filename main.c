@@ -7,6 +7,16 @@
 #include "utils.h"
 #include "calculs.h"
 
+char *generer_nom_fichier(char *prefixe) {
+    time_t maintenant = time(NULL);  
+    char *nom = malloc(100);        
+    if (nom == NULL) {
+        return NULL;
+    }
+    sprintf(nom, "%s_%ld.dat", prefixe, maintenant);
+    return nom;
+}
+
 int main(int nombre_arguments, char* arguments[]) {
     if(nombre_arguments < 4) {
         printf("Usage: %s <commande> <argument> <fichier_csv>\n", arguments[0]);
@@ -37,35 +47,36 @@ int main(int nombre_arguments, char* arguments[]) {
             type = 3;
         }
 
-        if(type != -1) {
-            char* nom_fichier_sortie;
-            
-            if(type == 0) {
-                nom_fichier_sortie = "vol_max.dat";
-            } else if(type == 1) {
-                nom_fichier_sortie = "vol_captation.dat";
-            } else if(type == 2) {
-                nom_fichier_sortie = "vol_traitement.dat";
-            } else {
-                nom_fichier_sortie = "vol_all.dat";
-            }
+    if(type != -1) {
+    char* nom_fichier_sortie = NULL;
+    if(type == 0) {
+        nom_fichier_sortie = generer_nom_fichier("vol_max");
+    } else if(type == 1) {
+        nom_fichier_sortie = generer_nom_fichier("vol_captation");
+    } else if(type == 2) {
+        nom_fichier_sortie = generer_nom_fichier("vol_traitement");
+    } else {
+        nom_fichier_sortie = generer_nom_fichier("vol_all");
+    }
 
-            FILE* f = fopen(nom_fichier_sortie, "w");
-            if(f != NULL) {
-                if(type == 0) {
-                    fprintf(f, "identifier;max volume (k.m3/an)\n");
-                } else if(type == 1) {
-                    fprintf(f, "identifier;source volume (k.m3/an)\n");
-                } else if(type == 2) {
-                    fprintf(f, "identifier;real volume (k.m3/an)\n");
-                } else {
-                    fprintf(f, "identifier;capacity;source;treated\n");
-                }
-
-                parcoursInverseAVLUsine(avl_usines, f, type);
-                fclose(f);
-            }
+    FILE* f = fopen(nom_fichier_sortie, "w");
+    if(f != NULL) {
+        if(type == 0) {
+            fprintf(f, "identifier;max volume (M.m3.year-1)\n");
+        } else if(type == 1) {
+            fprintf(f, "identifier;source volume (M.m3.year-1)\n");
+        } else if(type == 2) {
+            fprintf(f, "identifier;real volume (M.m3.year-1)\n");
+        } else {
+            fprintf(f, "identifier;capacity;source;treated\n");
         }
+
+        parcoursInverseAVLUsine(avl_usines, f, type);
+        fclose(f);
+    }
+    free(nom_fichier_sortie);
+}
+
     } else if(comparerChaines(commande, "leaks") == 0) {
         char* id_usine = argument;
         FILE* f = NULL;           
