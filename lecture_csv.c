@@ -3,33 +3,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int contientMot(char* chaine, char* sous_chaine) {
-    if(chaine == NULL || sous_chaine == NULL) {
+int contientMot( char* chaine, char* sous_chaine) {
+    if (chaine == NULL || sous_chaine == NULL || sous_chaine[0] == '\0') {
         return 0;
     }
-    
-    int i = 0;
-    while(chaine[i] != '\0') {
+    for (int i = 0; chaine[i] != '\0'; i++) {
         int j = 0;
-        int tmp = 1;
         
-        while(sous_chaine[j] != '\0') {
-            if(chaine[i + j] == '\0') {
-                tmp = 0;
-                break;
-            }
-            if(chaine[i + j] != sous_chaine[j]) {
-                tmp = 0;
-                break;
-            }
+        while (sous_chaine[j] != '\0' && chaine[i + j] != '\0' && 
+               chaine[i + j] == sous_chaine[j]) {
             j++;
         }
         
-        if(tmp == 1) {
+        if (sous_chaine[j] == '\0') {
             return 1;
         }
-        i++;
     }
+    
     return 0;
 }
 
