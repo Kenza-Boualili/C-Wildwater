@@ -118,22 +118,27 @@ int main(int nombre_arguments, char* arguments[]) {
 
         if(noeud_usine != NULL && infos_usine != NULL) {
             double volume_depart = infos_usine->total_traite;
-            double fuites_totales = 0;
-            
-            double volume_par_sortie = 0;
-            if(noeud_usine->nb_enfants > 0) {
-                volume_par_sortie = volume_depart / noeud_usine->nb_enfants;
-            }
-            
-            for(int i=0; i<noeud_usine->nb_enfants; i++) {
+            if (volume_depart <= 0) {
+        fprintf(f, "%s;0.00\n", id_usine);
+        printf("Usine %s : volume de départ nul ou négatif\n", id_usine);
+    } else {
+            if (volume_depart <= 0) {
+        fprintf(f, "%s;0.00\n", id_usine);
+        printf("Usine %s : volume de départ nul ou négatif\n", id_usine);
+    } else {
+        double fuites_totales = 0;
+        if (noeud_usine->nb_enfants > 0) {
+            double volume_par_sortie = volume_depart / noeud_usine->nb_enfants;
+            for(int i = 0; i < noeud_usine->nb_enfants; i++) {
                 fuites_totales += calculerFuites(noeud_usine->enfants[i], volume_par_sortie);
             }
-            fprintf(f, "%s;%.2f\n", id_usine, fuites_totales / 1000.0); 
-
-        } else {
-            fprintf(f, "%s;-1\n", id_usine);
-            printf("Usine %s introuvable (valeur -1 enregistree)\n", id_usine);
         }
+        fprintf(f, "%s;%.2f\n", id_usine, fuites_totales / 1000.0); 
+    }
+} else {
+    fprintf(f, "%s;-1\n", id_usine);
+    printf("Usine %s introuvable (valeur -1 enregistree)\n", id_usine);
+}
         fclose(f);
         printf("FICHIER_GENERE:%s\n", nom_fichier_sortie);
         free(nom_fichier_sortie);
