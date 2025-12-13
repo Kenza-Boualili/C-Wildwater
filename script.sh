@@ -168,8 +168,7 @@ case $1 in
     *)
         erreur "Commande inconnue : $1"
         ;;
- esac
-
+esac
 duree_totale
 
 
