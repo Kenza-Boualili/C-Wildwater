@@ -52,6 +52,10 @@ NoeudDistribution* creerNoeudDistribution(char* id) {
     }
 
     n->identifiant = dupliquerChaine(id);
+    if(n->identifiant == NULL) {  
+    free(n);
+    return NULL;
+}
     n->type = deduireType(id);
     n->volume_entrant = 0;
     n->pourcentage_fuite = 0;
@@ -124,38 +128,41 @@ LigneCSV* lire_ligne_csv(char* ligne) {
         return NULL;
     }
     
-    char* tmp = copie;
+    char* champs[5] = {NULL, NULL, NULL, NULL, NULL};
     int colonne = 0;
-    
-    for(int i = 0; copie[i] != '\0'; i++) {
+    char* debut = copie;
+
+    for(int i = 0; copie[i] != '\0' && colonne < 5; i++) {
         if(copie[i] == ';') {
             copie[i] = '\0';
-            
-            if(colonne == 0) {
-                if(comparerChaines(tmp, "-") != 0) {
-                resultat->usine_traitement = dupliquerChaine(tmp);
-                }
-            } else if(colonne == 1) {
-                if(comparerChaines(tmp, "-") != 0) {
-                resultat->id_amont = dupliquerChaine(tmp);
-                 }
-            } else if(colonne == 2) {
-                if(comparerChaines(tmp, "-") != 0) { 
-                resultat->id_aval = dupliquerChaine(tmp);
-                }
-            } else if(colonne == 3) {
-                if(comparerChaines(tmp, "-") != 0) {
-                    resultat->volume = atof(tmp);
-                }
-            } else if(colonne == 4) {
-                if(comparerChaines(tmp, "-") != 0) {
-                    resultat->pourcentage_fuite = atof(tmp);
-                }
-            }
-            
-            tmp = &copie[i + 1];
+            champs[colonne] = debut;
             colonne++;
+            debut = &copie[i + 1];
         }
+    }
+
+    if(colonne < 5) {
+        champs[colonne] = debut;
+    }
+    
+    if(champs[0] != NULL && comparerChaines(champs[0], "-") != 0) {
+        resultat->usine_traitement = dupliquerChaine(champs[0]);
+    }
+    
+    if(champs[1] != NULL && comparerChaines(champs[1], "-") != 0) {
+        resultat->id_amont = dupliquerChaine(champs[1]);
+    }
+    
+    if(champs[2] != NULL && comparerChaines(champs[2], "-") != 0) {
+        resultat->id_aval = dupliquerChaine(champs[2]);
+    }
+    
+    if(champs[3] != NULL && comparerChaines(champs[3], "-") != 0) {
+        resultat->volume = atof(champs[3]);
+    }
+    
+    if(champs[4] != NULL && comparerChaines(champs[4], "-") != 0) {
+        resultat->pourcentage_fuite = atof(champs[4]);
     }
     
     free(copie);
