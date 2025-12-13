@@ -52,7 +52,7 @@ generer_png() {
         src)  titre="Volume capté" ; base="${fichier%.*}" ;;
         real) titre="Volume traité" ; base="${fichier%.*}" ;;
         *) erreur "Type d'histogramme inconnu" ;;
-    esac
+esac
 
     echo "Génération des graphiques ($type)..."
 
@@ -137,7 +137,7 @@ traitement_leaks() {
         0) echo "Usine trouvée et fuites calculées." ;;
         1) echo "Usine non trouvée. Valeur -1 enregistrée dans $fichier." ;;
         *) erreur "Erreur critique du programme C (code $retour)." ;;
-    esac
+esac
 
     if [ -f "$fichier" ]; then
         echo "Fichier généré : $fichier"
