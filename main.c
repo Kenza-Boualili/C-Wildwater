@@ -59,47 +59,60 @@ int main(int nombre_arguments, char* arguments[]) {
         nom_fichier_sortie = generer_nom_fichier("vol_all");
     }
 
+    if(nom_fichier_sortie == NULL) {
+    printf("Erreur: Impossible de generer le nom du fichier\n");
+    libererAVLUsine(avl_usines);
+    libererAVLRecherche(avl_recherche);
+     return 1;
+     }
+        
     FILE* f = fopen(nom_fichier_sortie, "w");
-    if(f != NULL) {
-        if(type == 0) {
-            fprintf(f, "identifier;max volume (M.m3.year-1)\n");
-        } else if(type == 1) {
-            fprintf(f, "identifier;source volume (M.m3.year-1)\n");
-        } else if(type == 2) {
-            fprintf(f, "identifier;real volume (M.m3.year-1)\n");
-        } else {
-            fprintf(f, "identifier;capacity;source;treated\n");
-        }
-
-        parcoursInverseAVLUsine(avl_usines, f, type);
-        fclose(f);
-    }
+    if(f == NULL) {
+    printf("Erreur: Impossible d'ouvrir le fichier %s\n", nom_fichier_sortie);
     free(nom_fichier_sortie);
-}
+    libererAVLUsine(avl_usines);
+    libererAVLRecherche(avl_recherche);
+    return 1;
+    }
+        
+     if(type == 0) {
+    fprintf(f, "identifier;max volume (M.m3.year-1)\n");
+    } else if(type == 1) {
+    fprintf(f, "identifier;source volume (M.m3.year-1)\n");
+    } else if(type == 2) {
+    fprintf(f, "identifier;real volume (M.m3.year-1)\n");
+    } else {
+    fprintf(f, "identifier;capacity;source;treated\n");
+    }
+    parcoursInverseAVLUsine(avl_usines, f, type);
+    fclose(f);
+    printf("FICHIER_GENERE:%s\n", nom_fichier_sortie);
+    free(nom_fichier_sortie);
+}else {
+        printf("Erreur: type d'histogramme invalide\n");
+        libererAVLUsine(avl_usines);
+        libererAVLRecherche(avl_recherche);
+        return 1;
+        }
 
     } else if(comparerChaines(commande, "leaks") == 0) {
         char* id_usine = argument;
         char* nom_fichier_sortie = generer_nom_fichier("leaks");
-        FILE* f = fopen(nom_fichier_sortie, "w");          
-        
-        if (f == NULL) {
-            nouveau_fichier = 1;
-        } else {
-            fclose(f);
-            f = NULL;
-            nouveau_fichier = 0;
+        if(nom_fichier_sortie == NULL) {
+            printf("Erreur: Impossible de generer le nom du fichier\n");
+            libererAVLUsine(avl_usines);
+            libererAVLRecherche(avl_recherche);
+            return 1;
         }
         
-        f = fopen("leaks.dat", "a");
-        
+        FILE* f = fopen(nom_fichier_sortie, "w");          
         if (f == NULL) {
-            printf("Erreur : Impossible d'écrire dans %s\n", nom_fichier_sortie);
+            printf("Erreur : Impossible d'ecrire dans %s\n", nom_fichier_sortie);
             free(nom_fichier_sortie);
             libererAVLUsine(avl_usines);
             libererAVLRecherche(avl_recherche);
             return 1;
         }
-
         fprintf(f, "identifier;Leak volume (M.m3.year-1)\n");
         NoeudDistribution* noeud_usine = rechercherNoeud(avl_recherche, id_usine);
         DonneesUsine* infos_usine = rechercherUsine(avl_usines, id_usine);
@@ -123,10 +136,14 @@ int main(int nombre_arguments, char* arguments[]) {
             printf("Usine %s introuvable (valeur -1 enregistree)\n", id_usine);
         }
         fclose(f);
-        printf("Fichier généré : %s\n", nom_fichier_sortie);
+        printf("FICHIER_GENERE:%s\n", nom_fichier_sortie);
         free(nom_fichier_sortie);
+    } else{
+        printf("Erreur: Commande inconnue '%s'\n", commande);
+        libererAVLUsine(avl_usines);
+        libererAVLRecherche(avl_recherche);
+        return 1;
     }
-    
     libererAVLUsine(avl_usines);
     libererAVLRecherche(avl_recherche);
 
