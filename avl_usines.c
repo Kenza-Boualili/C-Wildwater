@@ -160,13 +160,13 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
     }
     parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
     if (type_histo == 0) {
-        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max);
+        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0);
     } else if (type_histo == 1) {
-        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte);
+        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte/1000.0);
     } else if (type_histo == 2) {
-        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite);
+        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite/1000.0);
     } else if (type_histo == 3) { 
-        fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max, racine->donnees->total_capte, racine->donnees->total_traite);
+        fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0, racine->donnees->total_capte/1000.0, racine->donnees->total_traite/1000.0);
     }
   parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
 }
