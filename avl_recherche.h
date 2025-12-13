@@ -11,5 +11,6 @@ NoeudAVLRecherche* rotationGaucheRecherche(NoeudAVLRecherche* racine);
 NoeudAVLRecherche* rotationDroiteRecherche(NoeudAVLRecherche* racine);
 NoeudAVLRecherche* insererAVLRecherche(NoeudAVLRecherche* racine, char* identifiant, NoeudDistribution* noeud);
 NoeudDistribution* rechercherNoeud(NoeudAVLRecherche* racine, char* identifiant);
+void libererArbreDistribution(NoeudDistribution* racine);
 
 #endif
