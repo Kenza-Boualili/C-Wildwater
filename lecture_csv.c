@@ -268,12 +268,8 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
         
         liberer_ligne_csv(ligne);
         
-        if(lignes_lues % 100000 == 0) {
-            printf("Lignes lues: %d\n", lignes_lues);
-        }
     }
     
     fclose(fichier);
-    printf("CSV charge: %d lignes traitees avec succes.\n", lignes_lues);
     return 0;
 }
