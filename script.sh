@@ -45,7 +45,7 @@ generer_png() {
     fichier=$1
     type=$2
 	
-    [ ! -f "$fichier" ]; && erreur "Le fichier de données '$fichier' n'existe pas."
+    [ ! -f "$fichier" ] && erreur "Le fichier de données '$fichier' n'existe pas."
     
     base="${fichier%.*}"
 
