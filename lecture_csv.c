@@ -193,7 +193,7 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
     
     while(fgets(buffer, sizeof(buffer), fichier)) {
         lignes_lues++;
-        
+        printf("DEBUG: Traitement ligne %d...\n", lignes_lues);
         int i = 0;
         while(buffer[i] != '\0' && buffer[i] != '\n') {
             i++;
