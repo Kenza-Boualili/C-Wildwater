@@ -2,7 +2,7 @@
 
 PROGRAMME_C="./c-wildwater"
 
-debut=$(date +%s)
+debut=$(date +%s%3N)
 
 erreur() {
     echo "[Erreur] $1"
@@ -11,8 +11,8 @@ erreur() {
 }
 
 duree_totale() {
-    fin=$(date +%s)
-    echo "Durée totale : $(( (fin - debut) * 1000 )) ms"
+    fin=$(date +%s%3N)
+    echo "Durée totale : $((fin - debut)) ms"
 }
 
 usage() {
@@ -39,18 +39,20 @@ verifier_compilation() {
     fi
 }
 
+trap 'rm -f plot_temp.gp *.header *.sorted *.small *.big' EXIT
+
 generer_png() {
     fichier=$1
     type=$2
 	
-    if [ ! -f "$fichier" ]; then
-        erreur "Le fichier de données '$fichier' n'existe pas."
-    fi
+    [ ! -f "$fichier" ]; && erreur "Le fichier de données '$fichier' n'existe pas."
+    
+    base="${fichier%.*}"
 
     case $type in
-        max)  titre="Capacité maximale" ; base="${fichier%.*}" ;;
-        src)  titre="Volume capté" ; base="${fichier%.*}" ;;
-        real) titre="Volume traité" ; base="${fichier%.*}" ;;
+        max)  titre="Capacité maximale" ;;
+        src)  titre="Volume capté" ;;
+        real) titre="Volume traité" ;; 
         *) erreur "Type d'histogramme inconnu" ;;
 esac
 
@@ -63,51 +65,44 @@ esac
     gp="plot_temp.gp"
 
     head -n 1 "$fichier" > "$head"
-    tail -n +2 "$fichier" | sort -t";" -k2,2n > "$tri"
+    tail -n +2 "$fichier" | sort -t";" -k1,1r > "$tri"
 
     cat "$head" > "$small"
     head -n 50 "$tri" >> "$small"
 
     cat "$head" > "$big"
     tail -n 10 "$tri" >> "$big"
-
     echo "set terminal png size 1200,800" > "$gp"
-    echo "set output '${base}_small.png'" >> "$gp"
-    echo "set title '${titre} (50 plus petites usines, M.m3/an)'" >> "$gp"
-    echo "set xlabel 'Usines'" >> "$gp"
-    echo "set ylabel 'Volume (M.m3/an)'" >> "$gp"
-    echo "set xtics rotate by -45" >> "$gp"
     echo "set datafile separator ';'" >> "$gp"
     echo "set style fill solid" >> "$gp"
-    echo "plot '$small' using 2:xtic(1) with boxes lc rgb '#a020f0' title ''" >> "$gp"
+    echo "set xtics rotate by -45" >> "$gp"
+    echo "set xlabel 'Usines'" >> "$gp"
+    echo "set ylabel 'Volume (M.m3/an)'" >> "$gp"
 
-    gnuplot "$gp"
-    if [ $? -ne 0 ]; then
-        echo "Erreur Gnuplot (50 petites usines). Nettoyage…"
-        rm -f "$gp" "$head" "$tri" "$small" "$big"
-        erreur "Impossible de générer l'image des 50 petites usines."
-    fi
+    echo "set output '${base}_small.png'" >> "$gp"
+    echo "set title '${titre} (50 plus petites usines)'" >> "$gp"
+    echo "plot '$small' using 2:xtic(1) with boxes title ''" >> "$gp"
+    gnuplot "$gp" || erreur "Erreur Gnuplot (50 petites usines)"
 
     echo "set output '${base}_big.png'" > "$gp"
-    echo "set title '${titre} (10 plus grandes usines, M.m3/an)'" >> "$gp"
-    echo "plot '$big' using 2:xtic(1) with boxes lc rgb '#a020f0' title ''" >> "$gp"
-
-    gnuplot "$gp"
-    if [ $? -ne 0 ]; then
-        echo "Erreur Gnuplot (10 grandes usines). Nettoyage…"
-        rm -f "$gp" "$head" "$tri" "$small" "$big"
-        erreur "Impossible de générer l'image des 10 grandes usines."
-    fi
-
-    rm -f "$gp" "$head" "$tri" "$small" "$big"
+    echo "set title '${titre} (10 plus grandes usines)'" >> "$gp"
+    echo "plot '$big' using 2:xtic(1) with boxes title ''" >> "$gp"
+    gnuplot "$gp" || erreur "Erreur Gnuplot (10 grandes usines)"
 
     echo "Images générées : ${base}_small.png et ${base}_big.png"
 }
+    
 
 traitement_histo() {
     type=$1
+	
+	case "$type" in
+        max|src|real) ;;
+        *) erreur "Option histo invalide : $type" ;;
+    esac
+	
     echo "Traitement histogramme ($type)..."
-	sortie=$($PROGRAMME_C histo "$type" "$CSV" 2>&1)
+	sortie=$($PROGRAMME_C "$CSV" histo "$type" 2>&1)
     retour=$?
 
     [ $retour -ne 0 ] && erreur "Erreur du programme C (code $retour)."
@@ -126,7 +121,7 @@ traitement_leaks() {
     [ -z "$id" ] && erreur "Aucun ID fourni."
 
     echo "Calcul des fuites pour $id..."
-    sortie=$($PROGRAMME_C leaks "$id" "$CSV" 2>&1)
+    sortie=$($PROGRAMME_C "$CSV" leaks "$id" 2>&1)
     retour=$?
 
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
@@ -135,17 +130,13 @@ traitement_leaks() {
 
     case $retour in
         0) echo "Usine trouvée et fuites calculées." ;;
-        1) echo "Usine non trouvée. Valeur -1 enregistrée dans $fichier." ;;
+        1) echo "Usine non trouvée. Valeur -1 enregistrée" ;;
         *) erreur "Erreur critique du programme C (code $retour)." ;;
 esac
 
-    if [ -f "$fichier" ]; then
-        echo "Fichier généré : $fichier"
-        echo "Contenu :"
-        cat "$fichier"
-    else
-        erreur "Fichier $fichier introuvable."
-    fi
+    [ -f "$fichier" ] || erreur "Fichier $fichier introuvable"
+    echo "Fichier généré : $fichier"
+    cat "$fichier"
 }
 
 [ $# -lt 2 ] && usage
