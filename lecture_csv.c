@@ -143,11 +143,17 @@ LigneCSV* lire_ligne_csv(char* ligne) {
             copie[i] = '\0';
             
             if(colonne == 0) {
+                if(comparerChaines(tmp, "-") != 0) {
                 resultat->usine_traitement = dupliquerChaine(tmp);
+                }
             } else if(colonne == 1) {
+                if(comparerChaines(tmp, "-") != 0) {
                 resultat->id_amont = dupliquerChaine(tmp);
+                 }
             } else if(colonne == 2) {
+                if(comparerChaines(tmp, "-") != 0) { 
                 resultat->id_aval = dupliquerChaine(tmp);
+                }
             } else if(colonne == 3) {
                 if(comparerChaines(tmp, "-") != 0) {
                     resultat->volume = atof(tmp);
