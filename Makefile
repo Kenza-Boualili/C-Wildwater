@@ -25,8 +25,7 @@ clean:
 	rm -f *.o c-wildwater
 
 cleanfile:
-	# MODIFICATION ICI : Suppression de leaks.dat, vol_all.dat et des fichiers temporaires
-	rm -f vol_max.dat vol_captation.dat vol_traitement.dat vol_all.dat
-	rm -f leaks.dat *.png *.sorted *.header *.filtre graph_data.temp
+    rm -f vol_max_*.dat vol_captation_*.dat vol_traitement_*.dat vol_all_*.dat
+    rm -f leaks_*.dat *.png *.sorted *.header *.filtre graph_data.temp
 
 .PHONY: all clean cleanfile
