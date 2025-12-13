@@ -25,6 +25,6 @@ clean:
 	rm -f *.o c-wildwater
 
 cleanfile:
-   rm -f vol_max_*.dat vol_captation_*.dat vol_traitement_*.dat
-   	rm -f vol_all_*.dat leaks_*.dat *.png *.sorted *.header
+	rm -f vol_max_*.dat vol_captation_*.dat vol_traitement_*.dat
+	rm -f vol_all_*.dat leaks_*.dat *.png *.sorted *.header
 .PHONY: all clean cleanfile
