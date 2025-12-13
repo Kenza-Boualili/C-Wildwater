@@ -22,10 +22,11 @@ int main(int nombre_arguments, char* arguments[]) {
         printf("Usage: %s <commande> <argument> <fichier_csv>\n", arguments[0]);
         return 1;
     }
+    
+    char* fichier_csv = arguments[1];
+    char* commande = arguments[2];
+    char* argument = arguments[3];
 
-    char* commande = arguments[1];
-    char* argument = arguments[2];
-    char* fichier_csv = arguments[3];
 
     NoeudAVLUsine* avl_usines = NULL;
     NoeudAVLRecherche* avl_recherche = NULL;
