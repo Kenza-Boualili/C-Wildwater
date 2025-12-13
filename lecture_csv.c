@@ -219,7 +219,7 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
             continue;
         }
         
-        if(ligne->id_aval == NULL || comparerChaines(ligne->id_aval, "-") == 0) {
+        if(ligne->id_aval == NULL) {
             if(ligne->volume != -1) {
                 DonneesUsine* u = (DonneesUsine*)malloc(sizeof(DonneesUsine));
                 u->identifiant = dupliquerChaine(ligne->id_amont);
