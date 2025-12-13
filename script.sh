@@ -79,7 +79,7 @@ esac
     echo "set xtics rotate by -45" >> "$gp"
     echo "set datafile separator ';'" >> "$gp"
     echo "set style fill solid" >> "$gp"
-    echo "plot '$small' using (\$2/1000):xtic(1) with boxes lc rgb '#a020f0' title ''" >> "$gp"
+    echo "plot '$small' using 2:xtic(1) with boxes lc rgb '#a020f0' title ''" >> "$gp"
 
     gnuplot "$gp"
     if [ $? -ne 0 ]; then
@@ -90,7 +90,7 @@ esac
 
     echo "set output '${base}_big.png'" > "$gp"
     echo "set title '${titre} (10 plus grandes usines, M.m3/an)'" >> "$gp"
-    echo "plot '$big' using (\$2/1000):xtic(1) with boxes lc rgb '#a020f0' title ''" >> "$gp"
+    echo "plot '$big' using 2:xtic(1) with boxes lc rgb '#a020f0' title ''" >> "$gp"
 
     gnuplot "$gp"
     if [ $? -ne 0 ]; then
