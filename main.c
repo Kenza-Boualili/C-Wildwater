@@ -82,9 +82,7 @@ int main(int nombre_arguments, char* arguments[]) {
     fprintf(f, "identifier;source volume (M.m3.year-1)\n");
     } else if(type == 2) {
     fprintf(f, "identifier;real volume (M.m3.year-1)\n");
-    } else {
-    fprintf(f, "identifier;capacity;source;treated\n");
-    }
+    } 
     parcoursInverseAVLUsine(avl_usines, f, type);
     fclose(f);
     printf("FICHIER_GENERE:%s\n", nom_fichier_sortie);
