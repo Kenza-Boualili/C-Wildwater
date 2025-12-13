@@ -158,7 +158,7 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
     if (racine == NULL) {
         return; 
     }
-    parcoursInverseAVLUsine(racine->gquche, fichier, type_histo);
+    parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
     if (type_histo == 0) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0);
     } else if (type_histo == 1) {
