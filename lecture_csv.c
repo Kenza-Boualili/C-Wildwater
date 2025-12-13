@@ -81,7 +81,6 @@ void ajouterEnfant(NoeudDistribution* parent, NoeudDistribution* enfant) {
         
         NoeudDistribution** nouveau_tableau = malloc(nouvelle_cap * sizeof(NoeudDistribution*));
         if(nouveau_tableau == NULL) {
-            printf("Erreur memoire ajout enfant\n");
             return;
         }
         
