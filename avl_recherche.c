@@ -29,11 +29,30 @@ void libererAVLRecherche(NoeudAVLRecherche* racine) {
     }
     libererAVLRecherche(racine->gauche);
     libererAVLRecherche(racine->droit);
-    
+    if (racine->pointeur_noeud != NULL) {
+        if (racine->pointeur_noeud->parent == NULL) {
+            libererArbreDistribution(racine->pointeur_noeud);
+        }
+    }
     free(racine->identifiant);
     free(racine);
 }
 
+void libererArbreDistribution(NoeudDistribution* racine) {
+    if (racine == NULL) {
+        return;
+    }
+    for (int i = 0; i < racine->nb_enfants; i++) {
+        libererArbreDistribution(racine->enfants[i]);
+    }
+    if (racine->enfants != NULL) {
+        free(racine->enfants);
+    }
+    if (racine->identifiant != NULL) {
+        free(racine->identifiant);
+    }
+    free(racine);
+}
 
 int hauteurAVLRecherche(NoeudAVLRecherche* noeud) {
     if (noeud == NULL) {
