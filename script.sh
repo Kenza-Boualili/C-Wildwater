@@ -97,7 +97,7 @@ traitement_histo() {
     type=$1
 	
 	case "$type" in
-        max|src|real) ;;
+        max|src|real|all) ;;
         *) erreur "Option histo invalide : $type" ;;
     esac
 	
