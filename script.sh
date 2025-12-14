@@ -21,7 +21,9 @@ usage() {
     echo "  histo max   : capacité maximale"
     echo "  histo src   : volume capté"
     echo "  histo real  : volume traité"
+	echo "  histo all   : toutes les données"
     echo "  leaks <ID>  : calcul des fuites"
+	
     duree_totale
     exit 1
 }
