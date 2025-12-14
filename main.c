@@ -29,11 +29,19 @@ int main(int nombre_arguments, char* arguments[]) {
 
     NoeudAVLUsine* avl_usines = NULL;
     NoeudAVLRecherche* avl_recherche = NULL;
-
+    NoeudDistribution* racine_distribution = NULL;
+    
     if(charger_csv(fichier_csv, &avl_usines, &avl_recherche) != 0) {
         return 1;
     }
 
+    if (avl_recherche != NULL) {
+        racine_distribution = avl_recherche->pointeur_noeud;
+        while (racine_distribution != NULL && racine_distribution->parent != NULL) {
+            racine_distribution = racine_distribution->parent;
+        }
+    }
+    
     if(comparerChaines(commande, "histo") == 0) {
         int type = -1;
         
@@ -155,6 +163,7 @@ int main(int nombre_arguments, char* arguments[]) {
     }
     
     libererAVLUsine(avl_usines);
+    libererArbreDistribution(racine_distribution);
     libererAVLRecherche(avl_recherche);
 
     return 0;
