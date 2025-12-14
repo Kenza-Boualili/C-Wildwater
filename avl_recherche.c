@@ -29,9 +29,6 @@ void libererAVLRecherche(NoeudAVLRecherche* racine) {
     }
     libererAVLRecherche(racine->gauche);
     libererAVLRecherche(racine->droit);
-    if (racine->pointeur_noeud != NULL && racine->pointeur_noeud->parent == NULL) {
-        libererArbreDistribution(racine->pointeur_noeud);
-    }
     free(racine->identifiant);
     free(racine);
 }
