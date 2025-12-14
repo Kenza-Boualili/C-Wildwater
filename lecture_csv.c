@@ -194,7 +194,7 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
         return 1;
     }
     
-    char buffer[1024];
+    char buffer[8192];
     int lignes_lues = 0;
     
     while(fgets(buffer, sizeof(buffer), fichier)) {
