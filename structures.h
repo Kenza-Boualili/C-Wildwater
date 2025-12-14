@@ -53,12 +53,4 @@ typedef struct NoeudAVLRecherche {
     int hauteur;                               
 } NoeudAVLRecherche;
 
-typedef struct Troncon {
-    char* id_amont;
-    char* id_aval;
-    double pourcentage_fuite;   
-    double volume;              
-    char* usine_traitement;            
-} Troncon;
-
 #endif
