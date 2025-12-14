@@ -18,8 +18,8 @@ char *generer_nom_fichier(char *prefixe) {
 }
 
 int main(int nombre_arguments, char* arguments[]) {
-    if(nombre_arguments < 4) {
-        printf("Usage: %s <commande> <argument> <fichier_csv>\n", arguments[0]);
+    if(nombre_arguments != 4) {
+        printf("Usage: %s <csv> <histo|leaks> <argument>\n", arguments[0]);
         return 1;
     }
     
