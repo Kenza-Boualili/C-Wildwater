@@ -65,7 +65,7 @@ esac
     gp="plot_temp.gp"
 
     head -n 1 "$fichier" > "$head"
-    tail -n +2 "$fichier" | sort -t";" -k1,1r > "$tri"
+   tail -n +2 "$fichier" | sort -t";" -k2,2n > "$tri"
 
     cat "$head" > "$small"
     head -n 50 "$tri" >> "$small"
@@ -146,6 +146,8 @@ shift
 
 verifier_fichier
 verifier_compilation
+command -v gnuplot >/dev/null || erreur "gnuplot non installé"
+
 
 case $1 in
     histo)
