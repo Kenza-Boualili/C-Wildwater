@@ -89,7 +89,13 @@ NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees) {
     } else if (comparaison > 0) {
         racine->droit = insererAVLUsine(racine->droit, donnees);
     } else {
-        return racine; // Doublon ignoré
+        // Mise à jour des données si l'usine existe déjà
+        racine->donnees->capacite_max += donnees->capacite_max;
+        racine->donnees->total_capte += donnees->total_capte;
+        racine->donnees->total_traite += donnees->total_traite;
+        free(donnees->identifiant);
+        free(donnees);
+        return racine; 
     }
     
     racine->hauteur = 1 + max(hauteurAVLUsine(racine->gauche), hauteurAVLUsine(racine->droit));
@@ -109,22 +115,24 @@ DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
     }
 }
 
-oid parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
-    if (racine == NULL) {
-        return; 
-    }
+/**
+ * PARCOURS CORRIGÉ : Tri alphabétique INVERSE (Z -> A) 
+ * Pour respecter la consigne, on parcourt : Fils Droit -> Racine -> Fils Gauche
+ */
+void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
+    if (racine == NULL) return; 
     
-    // 1. On va d'abord au maximum à DROITE (identifiants alphabétiquement les plus élevés) 
+    // 1. D'abord le sous-arbre DROIT (IDs les plus élevés / Z)
     parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
     
-    // 2. Traitement de la racine actuelle 
+    // 2. Traitement du noeud (Racine) : conversion en M.m3
     if (type_histo == 0) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0);
     } else if (type_histo == 1) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte/1000.0);
     } else if (type_histo == 2) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite/1000.0);
-    } else if (type_histo == 3) { 
+    } else if (type_histo == 3) {
         fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", 
                 racine->donnees->identifiant, 
                 racine->donnees->capacite_max/1000.0, 
@@ -132,6 +140,6 @@ oid parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo
                 racine->donnees->total_traite/1000.0);
     }
     
-    // 3. On termine par la GAUCHE (identifiants alphabétiquement les plus bas) 
+    // 3. Enfin le sous-arbre GAUCHE (IDs les plus bas / A)
     parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
 }
