@@ -1,4 +1,5 @@
 #!/bin/bash
+
 export LC_NUMERIC=C
 
 PROGRAMME_C="./c-wildwater"
@@ -18,10 +19,9 @@ duree_totale() {
 usage() {
     echo "Usage : $0 <csv> <commande> [argument]"
     echo "Commandes :"
-    echo "  histo max   : capacité maximale"
-    echo "  histo src   : volume capté"
-    echo "  histo real  : volume traité"
-    echo "  histo all   : toutes les données"
+    echo "  histo max   : capacité maximale (Axe Y: Quantité)"
+    echo "  histo src   : volume capté (Axe Y: Volume)"
+    echo "  histo real  : volume traité (Axe Y: Volume)"
     echo "  leaks <ID>  : calcul des fuites"
     duree_totale
     exit 1
@@ -49,12 +49,12 @@ generer_png() {
     [ ! -f "$fichier" ] && erreur "Le fichier de données '$fichier' n'existe pas."
     
     base="${fichier%.*}"
-    label_y="Volume" # Par défaut
+    label_y="Volume" 
 
     case $type in
         max)  
-            titre="Capacité maximale"
-            label_y="Quantité" # Spécifique pour max
+            titre="Capacité maximale" 
+            label_y="Quantité" 
             ;;
         src)  
             titre="Volume capté" 
@@ -62,9 +62,6 @@ generer_png() {
         real) 
             titre="Volume traité" 
             ;; 
-        all)  
-            titre="Volumes (Tous)" 
-            ;;
         *) erreur "Type d'histogramme inconnu" ;;
     esac
 
@@ -75,32 +72,35 @@ generer_png() {
     small="$fichier.small"
     big="$fichier.big"
     gp="plot_temp.gp"
-
+    
     head -n 1 "$fichier" > "$head"
     tail -n +2 "$fichier" | sort -t";" -k2,2g > "$tri"
 
     if [ ! -s "$tri" ]; then
-        erreur "Le fichier $fichier ne contient aucune donnée valide."
+        erreur "Le fichier de données trié est vide." 
     fi
 
     cat "$head" > "$small"
     head -n 50 "$tri" >> "$small"
-
     cat "$head" > "$big"
     tail -n 10 "$tri" >> "$big"
 
-    common_gp="set datafile separator ';'; set style fill solid; set xtics rotate by -45; set xlabel 'Identifiants'; set ylabel '$label_y (M.m3/an)';"
+    common_cfg="set datafile separator ';'; 
+                set style fill solid; 
+                set xtics rotate by -45; 
+                set xlabel 'Identifiants'; 
+                set ylabel '$label_y (M.m3/an)';"
 
     echo "set terminal png size 1200,800; set output '${base}_small.png';" > "$gp"
-    echo "$common_gp" >> "$gp"
+    echo "$common_cfg" >> "$gp"
     echo "set title '${titre} (50 plus petites usines)';" >> "$gp"
-    echo "plot '$small' using 2:xtic(1) with boxes title '';" >> "$gp"
+    echo "plot '$small' using 2:xtic(1) with boxes lc rgb 'blue' title '';" >> "$gp"
     gnuplot "$gp" || erreur "Erreur Gnuplot (50 petites)"
 
     echo "set terminal png size 1200,800; set output '${base}_big.png';" > "$gp"
-    echo "$common_gp" >> "$gp"
+    echo "$common_cfg" >> "$gp"
     echo "set title '${titre} (10 plus grandes usines)';" >> "$gp"
-    echo "plot '$big' using 2:xtic(1) with boxes title '';" >> "$gp"
+    echo "plot '$big' using 2:xtic(1) with boxes lc rgb 'blue' title '';" >> "$gp"
     gnuplot "$gp" || erreur "Erreur Gnuplot (10 grandes)"
 
     echo "Images générées : ${base}_small.png et ${base}_big.png"
@@ -108,11 +108,16 @@ generer_png() {
 
 traitement_histo() {
     type=$1
+    case "$type" in
+        max|src|real) ;;
+        *) erreur "Option histo invalide : $type" ;;
+    esac
+    
     echo "Traitement histogramme ($type)..."
     sortie=$($PROGRAMME_C "$CSV" histo "$type" 2>&1)
     retour=$?
 
-    [ $retour -ne 0 ] && erreur "Erreur du programme C (code $retour)."
+    [ $retour -ne 0 ] && erreur "Erreur du programme C."
     
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
     [ -z "$fichier" ] && erreur "Nom de fichier non récupéré."
@@ -128,10 +133,10 @@ traitement_leaks() {
     [ -f "$fichier" ] || erreur "Fichier $fichier introuvable"
     cat "$fichier"
 }
-
 [ $# -lt 2 ] && usage
 CSV="$1"
 shift
+
 verifier_fichier
 verifier_compilation
 
