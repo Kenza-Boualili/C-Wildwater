@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Force le format des nombres avec un point (important pour Gnuplot)
 export LC_NUMERIC=C
 
 PROGRAMME_C="./c-wildwater"
@@ -40,7 +42,6 @@ verifier_compilation() {
     fi
 }
 
-
 trap 'rm -f plot_temp.gp *.header *.sorted *.small *.big' EXIT
 
 generer_png() {
@@ -74,18 +75,22 @@ generer_png() {
         erreur "Le fichier $fichier ne contient aucune donnée valide pour Gnuplot."
     fi
 
+
     cat "$head" > "$small"
     head -n 50 "$tri" >> "$small"
 
     cat "$head" > "$big"
     tail -n 10 "$tri" >> "$big"
 
+
     echo "set terminal png size 1200,800" > "$gp"
     echo "set datafile separator ';'" >> "$gp"
     echo "set style fill solid" >> "$gp"
     echo "set xtics rotate by -45" >> "$gp"
-    echo "set xlabel 'Usines'" >> "$gp"
-    echo "set ylabel 'Volume (M.m3/an)'" >> "$gp"
+    
+
+    echo "set xlabel 'Identifiants'" >> "$gp"
+    echo "set ylabel 'Quantité (M.m3/an)'" >> "$gp"
 
     echo "set output '${base}_small.png'" >> "$gp"
     echo "set title '${titre} (50 plus petites usines)'" >> "$gp"
@@ -97,6 +102,10 @@ generer_png() {
     echo "set datafile separator ';'" >> "$gp"
     echo "set style fill solid" >> "$gp"
     echo "set xtics rotate by -45" >> "$gp"
+
+    echo "set xlabel 'Identifiants'" >> "$gp"
+    echo "set ylabel 'Quantité (M.m3/an)'" >> "$gp"
+
     echo "set title '${titre} (10 plus grandes usines)'" >> "$gp"
     echo "plot '$big' using 2:xtic(1) with boxes title ''" >> "$gp"
     gnuplot "$gp" || erreur "Erreur Gnuplot (10 grandes usines)"
