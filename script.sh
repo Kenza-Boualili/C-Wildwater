@@ -4,6 +4,9 @@
 PROGRAMME_C="./c-wildwater"
 debut=$(date +%s%3N)
 
+# Export pour s'assurer que le point est utilisé comme séparateur décimal
+export LC_NUMERIC=C
+
 erreur() {
     echo "[Erreur] $1" >&2
     duree_totale
@@ -38,6 +41,7 @@ verifier_compilation() {
 }
 
 extraire_fichier_genere() {
+    # On cherche la ligne FICHIER_GENERE dans la sortie du programme
     grep "FICHIER_GENERE:" programme_sortie.log | cut -d':' -f2 | tr -d '\r '
 }
 
@@ -57,23 +61,22 @@ generer_png() {
 
     echo "Génération de l'image combinée (Top 10 & Top 50)..."
 
-    # Fichiers temporaires
+    # Fichiers temporaires pour le tri et Gnuplot
     head_f="$fichier_dat.header"
     tri_f="$fichier_dat.sorted"
     small_f="$fichier_dat.small"
     big_f="$fichier_dat.big"
     gp_script="plot_temp.gp"
 
-    # Préparation des données : tri par volume (colonne 2)
+    # Préparation des données : tri numérique par volume (colonne 2)
     head -n 1 "$fichier_dat" > "$head_f"
     tail -n +2 "$fichier_dat" | sort -t";" -k2,2g > "$tri_f"
 
-    # Extraction des extrêmes
+    # Extraction des 50 plus petites et 10 plus grandes usines
     head -n 50 "$tri_f" > "$small_f"
     tail -n 10 "$tri_f" > "$big_f"
 
-    # Génération du script Gnuplot (Multiplot)
-    # Attention : Ne pas mettre d'espaces avant EOF
+    # Génération du script Gnuplot pour une image unique (Multiplot)
     cat << EOF > "$gp_script"
 set terminal png size 1000,1400 font "Arial,10"
 set output '${base}_combined.png'
@@ -84,12 +87,12 @@ set grid y
 
 set multiplot layout 2,1 title "Projet C-WildWater : ${titre}\n" font "Arial,16"
 
-# GRAPHE 1 : Les 10 plus grandes usines
+# GRAPHE 1 : Les 10 plus grandes usines (Top 10)
 set title "Top 10 : Plus grandes usines" font "Arial,12"
 set xtics rotate by -45
 plot '$big_f' using 2:xtic(1) with boxes lc rgb "#1f77b4" title "Volume"
 
-# GRAPHE 2 : Les 50 plus petites usines
+# GRAPHE 2 : Les 50 plus petites usines (Top 50)
 set title "Top 50 : Plus petites usines" font "Arial,12"
 set xtics rotate by -90 font "Arial,7"
 plot '$small_f' using 2:xtic(1) with boxes lc rgb "#2ca02c" title "Volume"
@@ -102,24 +105,25 @@ EOF
         gnuplot "$gp_script"
         echo "✅ Image générée : ${base}_combined.png"
     else
-        echo "⚠ Gnuplot non trouvé."
+        echo "⚠ Gnuplot non trouvé. Seul le fichier .dat est conservé."
     fi
 
-    # Nettoyage
+    # Nettoyage des fichiers temporaires
     rm -f "$head_f" "$tri_f" "$small_f" "$big_f" "$gp_script"
 }
 
 traitement_histo() {
     local type_val=$1
+    # On redirige la sortie pour capturer le nom du fichier généré
     $PROGRAMME_C "$CSV" histo "$type_val" > programme_sortie.log 2>&1
     ret=$?
-    [ $ret -ne 0 ] && erreur "Erreur programme C ($ret)."
+    [ $ret -ne 0 ] && erreur "Le programme C a échoué (code $ret)."
 
     fichier_genere=$(extraire_fichier_genere)
     if [ -f "$fichier_genere" ]; then
         generer_png "$fichier_genere" "$type_val"
     else
-        erreur "Fichier .dat introuvable."
+        erreur "Le fichier .dat n'a pas pu être localisé."
     fi
 }
 
@@ -128,22 +132,38 @@ traitement_leaks() {
     $PROGRAMME_C "$CSV" leaks "$id_usine" > programme_sortie.log 2>&1
     fichier_genere=$(extraire_fichier_genere)
     if [ -f "$fichier_genere" ]; then
+        echo "Résultat de la recherche de fuites :"
         cat "$fichier_genere"
     else
-        erreur "Fichier de fuites introuvable."
+        erreur "Résultat de fuites introuvable."
     fi
 }
 
-# --- Point d'entrée ---
+# --- Point d'entrée du script ---
+
+# Vérification minimale : on attend au moins <csv> et <commande>
 [ $# -lt 2 ] && usage
-CSV="$1"; shift
+
+CSV="$1"
+shift # On retire le CSV des arguments, $1 devient la commande
+
 verifier_fichier
 verifier_compilation
 
 case $1 in
-    histo) [ $# -ne 1 ] && usage; traitement_histo "$2" ;;
-    leaks) [ $# -ne 1 ] && usage; traitement_leaks "$2" ;;
-    *) usage ;;
+    histo)
+        # Vérifie qu'on a bien l'argument type (max, src, etc.)
+        [ -z "$1" ] || [ -z "$2" ] && usage
+        traitement_histo "$2"
+        ;;
+    leaks)
+        # Vérifie qu'on a bien l'identifiant de l'usine
+        [ -z "$1" ] || [ -z "$2" ] && usage
+        traitement_leaks "$2"
+        ;;
+    *)
+        usage
+        ;;
 esac
 
 duree_totale
