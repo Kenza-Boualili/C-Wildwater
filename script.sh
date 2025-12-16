@@ -52,11 +52,28 @@ generer_png() {
     [ ! -f "$fichier_dat" ] && erreur "Le fichier de données '$fichier_dat' n'existe pas."
     base="${fichier_dat%.*}"
 
+    # Adaptation dynamique des titres et labels selon le type
     case $type in
-        max)  titre="Capacité maximale" ;;
-        src)  titre="Volume capté" ;;
-        real) titre="Volume traité" ;;
-        *) titre="Analyse Usines" ;;
+        max)  
+            titre="Capacité maximale" 
+            label_y="Capacité (M.m3/an)"
+            legende="Capacité"
+            ;;
+        src)  
+            titre="Volume capté" 
+            label_y="Volume (M.m3/an)"
+            legende="Volume capté"
+            ;;
+        real) 
+            titre="Volume traité" 
+            label_y="Volume (M.m3/an)"
+            legende="Volume traité"
+            ;;
+        *) 
+            titre="Analyse Usines" 
+            label_y="Volume (M.m3/an)"
+            legende="Volume"
+            ;;
     esac
 
     echo "Génération de l'image combinée (Top 10 & Top 50)..."
@@ -82,7 +99,7 @@ set terminal png size 1000,1400 font "Arial,10"
 set output '${base}_combined.png'
 set datafile separator ';'
 set style fill solid 0.7 border -1
-set ylabel 'Volume (M.m3/an)'
+set ylabel '$label_y'
 set grid y
 
 set multiplot layout 2,1 title "Projet C-WildWater : ${titre}\n" font "Arial,16"
@@ -90,12 +107,12 @@ set multiplot layout 2,1 title "Projet C-WildWater : ${titre}\n" font "Arial,16"
 # GRAPHE 1 : Les 10 plus grandes usines (Top 10)
 set title "Top 10 : Plus grandes usines" font "Arial,12"
 set xtics rotate by -45
-plot '$big_f' using 2:xtic(1) with boxes lc rgb "#1f77b4" title "Volume"
+plot '$big_f' using 2:xtic(1) with boxes lc rgb "#1f77b4" title "$legende"
 
 # GRAPHE 2 : Les 50 plus petites usines (Top 50)
 set title "Top 50 : Plus petites usines" font "Arial,12"
 set xtics rotate by -90 font "Arial,7"
-plot '$small_f' using 2:xtic(1) with boxes lc rgb "#2ca02c" title "Volume"
+plot '$small_f' using 2:xtic(1) with boxes lc rgb "#2ca02c" title "$legende"
 
 unset multiplot
 EOF
@@ -152,13 +169,17 @@ verifier_compilation
 
 case $1 in
     histo)
-        # Vérifie qu'on a bien l'argument type (max, src, etc.)
-        [ -z "$1" ] || [ -z "$2" ] && usage
+        # Vérifie qu'on a bien l'argument type (max, src, real)
+        if [ -z "$1" ] || [ -z "$2" ]; then
+             usage
+        fi
         traitement_histo "$2"
         ;;
     leaks)
         # Vérifie qu'on a bien l'identifiant de l'usine
-        [ -z "$1" ] || [ -z "$2" ] && usage
+        if [ -z "$1" ] || [ -z "$2" ]; then
+             usage
+        fi
         traitement_leaks "$2"
         ;;
     *)
