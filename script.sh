@@ -1,7 +1,7 @@
 #!/bin/bash
+export LC_NUMERIC=C
 
 PROGRAMME_C="./c-wildwater"
-
 debut=$(date +%s%3N)
 
 erreur() {
@@ -21,9 +21,8 @@ usage() {
     echo "  histo max   : capacité maximale"
     echo "  histo src   : volume capté"
     echo "  histo real  : volume traité"
-	echo "  histo all   : toutes les données"
+    echo "  histo all   : toutes les données"
     echo "  leaks <ID>  : calcul des fuites"
-	
     duree_totale
     exit 1
 }
@@ -41,12 +40,13 @@ verifier_compilation() {
     fi
 }
 
+
 trap 'rm -f plot_temp.gp *.header *.sorted *.small *.big' EXIT
 
 generer_png() {
     fichier=$1
     type=$2
-	
+    
     [ ! -f "$fichier" ] && erreur "Le fichier de données '$fichier' n'existe pas."
     
     base="${fichier%.*}"
@@ -55,8 +55,9 @@ generer_png() {
         max)  titre="Capacité maximale" ;;
         src)  titre="Volume capté" ;;
         real) titre="Volume traité" ;; 
+        all)  titre="Volumes (Tous)" ;;
         *) erreur "Type d'histogramme inconnu" ;;
-esac
+    esac
 
     echo "Génération des graphiques ($type)..."
 
@@ -67,13 +68,18 @@ esac
     gp="plot_temp.gp"
 
     head -n 1 "$fichier" > "$head"
-   tail -n +2 "$fichier" | sort -t";" -k2,2n > "$tri"
+    tail -n +2 "$fichier" | sort -t";" -k2,2g > "$tri"
+
+    if [ ! -s "$tri" ]; then
+        erreur "Le fichier $fichier ne contient aucune donnée valide pour Gnuplot."
+    fi
 
     cat "$head" > "$small"
     head -n 50 "$tri" >> "$small"
 
     cat "$head" > "$big"
     tail -n 10 "$tri" >> "$big"
+
     echo "set terminal png size 1200,800" > "$gp"
     echo "set datafile separator ';'" >> "$gp"
     echo "set style fill solid" >> "$gp"
@@ -87,39 +93,40 @@ esac
     gnuplot "$gp" || erreur "Erreur Gnuplot (50 petites usines)"
 
     echo "set output '${base}_big.png'" > "$gp"
+    echo "set terminal png size 1200,800" >> "$gp"
+    echo "set datafile separator ';'" >> "$gp"
+    echo "set style fill solid" >> "$gp"
+    echo "set xtics rotate by -45" >> "$gp"
     echo "set title '${titre} (10 plus grandes usines)'" >> "$gp"
     echo "plot '$big' using 2:xtic(1) with boxes title ''" >> "$gp"
     gnuplot "$gp" || erreur "Erreur Gnuplot (10 grandes usines)"
 
     echo "Images générées : ${base}_small.png et ${base}_big.png"
 }
-    
 
 traitement_histo() {
     type=$1
-	
-	case "$type" in
+    case "$type" in
         max|src|real|all) ;;
         *) erreur "Option histo invalide : $type" ;;
     esac
-	
+    
     echo "Traitement histogramme ($type)..."
-	sortie=$($PROGRAMME_C "$CSV" histo "$type" 2>&1)
+    sortie=$($PROGRAMME_C "$CSV" histo "$type" 2>&1)
     retour=$?
 
     [ $retour -ne 0 ] && erreur "Erreur du programme C (code $retour)."
     
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
-   [ -z "$fichier" ] && erreur "Nom de fichier non récupéré du programme C."
+    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré du programme C."
     [ ! -f "$fichier" ] && erreur "Fichier $fichier non généré."
-	echo "Fichier généré : $fichier"
-
+    
+    echo "Fichier de données : $fichier"
     generer_png "$fichier" "$type"
 }
 
 traitement_leaks() {
     id="$1"
-
     [ -z "$id" ] && erreur "Aucun ID fourni."
 
     echo "Calcul des fuites pour $id..."
@@ -127,17 +134,10 @@ traitement_leaks() {
     retour=$?
 
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
-
-    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré du programme C."
-
-    case $retour in
-        0) echo "Usine trouvée et fuites calculées." ;;
-        1) echo "Usine non trouvée. Valeur -1 enregistrée" ;;
-        *) erreur "Erreur critique du programme C (code $retour)." ;;
-esac
+    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré."
 
     [ -f "$fichier" ] || erreur "Fichier $fichier introuvable"
-    echo "Fichier généré : $fichier"
+    echo "Résultat enregistré dans : $fichier"
     cat "$fichier"
 }
 
@@ -148,22 +148,20 @@ shift
 
 verifier_fichier
 verifier_compilation
-command -v gnuplot >/dev/null || erreur "gnuplot non installé"
-
+command -v gnuplot >/dev/null || erreur "gnuplot n'est pas installé sur ce système."
 
 case $1 in
     histo)
-        [ $# -ne 2 ] && erreur "Usage : histo <max|src|real>"
+        [ $# -ne 2 ] && usage
         traitement_histo "$2"
         ;;
     leaks)
-        [ $# -ne 2 ] && erreur "Usage : leaks <ID_usine>"
+        [ $# -ne 2 ] && usage
         traitement_leaks "$2"
         ;;
     *)
-        erreur "Commande inconnue : $1"
+        usage
         ;;
 esac
+
 duree_totale
-
-
