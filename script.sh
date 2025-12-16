@@ -72,7 +72,7 @@ generer_png() {
     small="$fichier.small"
     big="$fichier.big"
     gp="plot_temp.gp"
-    
+
     head -n 1 "$fichier" > "$head"
     tail -n +2 "$fichier" | sort -t";" -k2,2g > "$tri"
 
@@ -86,7 +86,8 @@ generer_png() {
     tail -n 10 "$tri" >> "$big"
 
     common_cfg="set datafile separator ';'; 
-                set style fill solid; 
+                set style fill solid 0.8 border -1; 
+                set boxwidth 0.5 relative;
                 set xtics rotate by -45; 
                 set xlabel 'Identifiants'; 
                 set ylabel '$label_y (M.m3/an)';"
@@ -108,20 +109,11 @@ generer_png() {
 
 traitement_histo() {
     type=$1
-    case "$type" in
-        max|src|real) ;;
-        *) erreur "Option histo invalide : $type" ;;
-    esac
-    
     echo "Traitement histogramme ($type)..."
     sortie=$($PROGRAMME_C "$CSV" histo "$type" 2>&1)
     retour=$?
-
     [ $retour -ne 0 ] && erreur "Erreur du programme C."
-    
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
-    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré."
-    
     generer_png "$fichier" "$type"
 }
 
@@ -130,13 +122,12 @@ traitement_leaks() {
     echo "Calcul des fuites pour $id..."
     sortie=$($PROGRAMME_C "$CSV" leaks "$id" 2>&1)
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
-    [ -f "$fichier" ] || erreur "Fichier $fichier introuvable"
     cat "$fichier"
 }
+
 [ $# -lt 2 ] && usage
 CSV="$1"
 shift
-
 verifier_fichier
 verifier_compilation
 
