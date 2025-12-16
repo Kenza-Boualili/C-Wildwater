@@ -4,27 +4,56 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Fonction utilitaire pour vérifier si une sous-chaine est présente
 int contientMot(char* chaine, char* sous_chaine) {
     if (chaine == NULL || sous_chaine == NULL || sous_chaine[0] == '\0') {
         return 0;
     }
-    return strstr(chaine, sous_chaine) != NULL; // Utilisation de la fonction standard plus sûre
+    return strstr(chaine, sous_chaine) != NULL;
 }
 
+// Fonction corrigée pour identifier tous les types d'acteurs du projet
 TypeNoeud deduireType(char* id) {
-    if (contientMot(id, "Spring"))   return NOEUD_SOURCE;
-    if (contientMot(id, "Facility")) return NOEUD_USINE;
-    if (contientMot(id, "Storage"))  return NOEUD_STOCKAGE;
-    if (contientMot(id, "Junction")) return NOEUD_JONCTION;
-    if (contientMot(id, "Service"))  return NOEUD_SERVICE;
-    if (contientMot(id, "Cust"))     return NOEUD_CLIENT;
+    // Identification des SOURCES (Spring, Well, Fountain, Resurgence, etc.)
+    if (contientMot(id, "Spring") || contientMot(id, "Well") || contientMot(id, "Fountain") || contientMot(id, "Resurgence")) {
+        return NOEUD_SOURCE;
+    }
+    
+    // Identification des USINES (Facility, Unit, Plant, Module)
+    if (contientMot(id, "Facility") || contientMot(id, "Unit") || contientMot(id, "Plant") || contientMot(id, "Module")) {
+        return NOEUD_USINE;
+    }
+    
+    // Identification des STOCKAGES
+    if (contientMot(id, "Storage")) {
+        return NOEUD_STOCKAGE;
+    }
+    
+    // Identification des JONCTIONS
+    if (contientMot(id, "Junction")) {
+        return NOEUD_JONCTION;
+    }
+    
+    // Identification des SERVICES (Raccordements)
+    if (contientMot(id, "Service")) {
+        return NOEUD_SERVICE;
+    }
+    
+    // Identification des CLIENTS (Usagers)
+    if (contientMot(id, "Cust")) {
+        return NOEUD_CLIENT;
+    }
+
+    // Par défaut
     return NOEUD_JONCTION;
 }
 
 // Alloue et initialise un nouveau noeud de distribution
 NoeudDistribution* creerNoeudDistribution(char* id) {
     NoeudDistribution* n = malloc(sizeof(NoeudDistribution));
-    if (n == NULL) return NULL;
+    if (n == NULL) {
+        return NULL;
+    }
 
     n->identifiant = dupliquerChaine(id);
     if (n->identifiant == NULL) {
@@ -47,13 +76,17 @@ NoeudDistribution* creerNoeudDistribution(char* id) {
 }
 
 void ajouterEnfant(NoeudDistribution* parent, NoeudDistribution* enfant) {
-    if (parent == NULL || enfant == NULL) return;
+    if (parent == NULL || enfant == NULL) {
+        return;
+    }
 
     if (parent->nb_enfants >= parent->capacite_enfants) {
         int nouvelle_cap = (parent->capacite_enfants == 0) ? 5 : parent->capacite_enfants * 2;
         
         NoeudDistribution** nouveau_tableau = realloc(parent->enfants, nouvelle_cap * sizeof(NoeudDistribution*));
-        if (nouveau_tableau == NULL) return;
+        if (nouveau_tableau == NULL) {
+            return;
+        }
         
         parent->enfants = nouveau_tableau;
         parent->capacite_enfants = nouvelle_cap;
@@ -64,12 +97,15 @@ void ajouterEnfant(NoeudDistribution* parent, NoeudDistribution* enfant) {
     enfant->parent = parent;
 }
 
-
 LigneCSV* lire_ligne_csv(char* ligne) {
-    if (ligne == NULL || ligne[0] == '\0') return NULL;
+    if (ligne == NULL || ligne[0] == '\0') {
+        return NULL;
+    }
     
     LigneCSV* resultat = malloc(sizeof(LigneCSV));
-    if (resultat == NULL) return NULL;
+    if (resultat == NULL) {
+        return NULL;
+    }
     
     resultat->usine_traitement = NULL;
     resultat->id_amont = NULL;
@@ -91,21 +127,34 @@ LigneCSV* lire_ligne_csv(char* ligne) {
         }
         ptr++;
     }
-    if (colonne < 5) champs[colonne] = debut; // Dernier champ
-    
+    if (colonne < 5) {
+        champs[colonne] = debut;
+    }
 
-    if (champs[0] && strcmp(champs[0], "-") != 0) resultat->usine_traitement = dupliquerChaine(champs[0]);
-    if (champs[1] && strcmp(champs[1], "-") != 0) resultat->id_amont = dupliquerChaine(champs[1]);
-    if (champs[2] && strcmp(champs[2], "-") != 0) resultat->id_aval = dupliquerChaine(champs[2]);
-    if (champs[3] && strcmp(champs[3], "-") != 0) resultat->volume = atof(champs[3]);
-    if (champs[4] && strcmp(champs[4], "-") != 0) resultat->pourcentage_fuite = atof(champs[4]);
+    if (champs[0] && strcmp(champs[0], "-") != 0) {
+        resultat->usine_traitement = dupliquerChaine(champs[0]);
+    }
+    if (champs[1] && strcmp(champs[1], "-") != 0) {
+        resultat->id_amont = dupliquerChaine(champs[1]);
+    }
+    if (champs[2] && strcmp(champs[2], "-") != 0) {
+        resultat->id_aval = dupliquerChaine(champs[2]);
+    }
+    if (champs[3] && strcmp(champs[3], "-") != 0) {
+        resultat->volume = atof(champs[3]);
+    }
+    if (champs[4] && strcmp(champs[4], "-") != 0) {
+        resultat->pourcentage_fuite = atof(champs[4]);
+    }
     
     free(copie);
     return resultat;
 }
 
 void liberer_ligne_csv(LigneCSV* ligne) {
-    if (ligne == NULL) return;
+    if (ligne == NULL) {
+        return;
+    }
     free(ligne->usine_traitement);
     free(ligne->id_amont);
     free(ligne->id_aval);
@@ -125,12 +174,16 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
     while (fgets(buffer, sizeof(buffer), fichier)) {
         buffer[strcspn(buffer, "\r\n")] = 0;
         
-   
-        if (buffer[0] == '\0' || contientMot(buffer, "Source;")) continue;
+        if (buffer[0] == '\0' || contientMot(buffer, "Source;")) {
+            continue;
+        }
 
         LigneCSV* ligne = lire_ligne_csv(buffer);
-        if (ligne == NULL) continue;
+        if (ligne == NULL) {
+            continue;
+        }
 
+        // Cas d'une ligne de définition (Usine seule)
         if (ligne->id_aval == NULL) {
             if (ligne->volume != -1) {
                 DonneesUsine* u = malloc(sizeof(DonneesUsine));
@@ -146,7 +199,7 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
                 *avl_recherche = insererAVLRecherche(*avl_recherche, ligne->id_amont, n);
             }
         } 
-
+        // Cas d'un tronçon (Lien amont -> aval)
         else {
             NoeudDistribution* parent = rechercherNoeud(*avl_recherche, ligne->id_amont);
             if (parent == NULL) {
@@ -166,11 +219,12 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
                 enfant->pourcentage_fuite = ligne->pourcentage_fuite;
             }
 
+            // Calcul spécifique pour le volume capté (Source -> Usine)
             if (parent->type == NOEUD_SOURCE && enfant->type == NOEUD_USINE) {
                 if (ligne->volume != -1) {
                     DonneesUsine* d = malloc(sizeof(DonneesUsine));
                     d->identifiant = dupliquerChaine(enfant->identifiant);
-                    d->capacite_max = 0; // Sera mis à jour par la définition de l'usine plus tard
+                    d->capacite_max = 0; 
                     d->total_capte = ligne->volume;
                     double p = (ligne->pourcentage_fuite != -1) ? ligne->pourcentage_fuite : 0;
                     d->total_traite = ligne->volume * (1.0 - (p / 100.0));
