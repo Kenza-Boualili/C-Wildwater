@@ -109,20 +109,22 @@ DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
     }
 }
 
-void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
-    if (racine == NULL) return; 
+oid parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
+    if (racine == NULL) {
+        return; 
+    }
     
-    // 1. Parcours du sous-arbre droit (valeurs alphabétiques supérieures)
+    // 1. On va d'abord au maximum à DROITE (identifiants alphabétiquement les plus élevés) 
     parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
     
-    // 2. Traitement du noeud courant (Racine)
+    // 2. Traitement de la racine actuelle 
     if (type_histo == 0) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0);
     } else if (type_histo == 1) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte/1000.0);
     } else if (type_histo == 2) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite/1000.0);
-    } else if (type_histo == 3) {
+    } else if (type_histo == 3) { 
         fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", 
                 racine->donnees->identifiant, 
                 racine->donnees->capacite_max/1000.0, 
@@ -130,6 +132,6 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
                 racine->donnees->total_traite/1000.0);
     }
     
-    // 3. Parcours du sous-arbre gauche (valeurs alphabétiques inférieures)
+    // 3. On termine par la GAUCHE (identifiants alphabétiquement les plus bas) 
     parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
 }
