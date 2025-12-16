@@ -19,7 +19,7 @@ TypeNoeud deduireType(char* id) {
         return NOEUD_SOURCE;
     }
     
-    // Identification des USINES (Facility, Unit, Plant, Module)
+    // Identification des USINES (Reconnaît Facility, Unit, Plant, Module)
     if (contientMot(id, "Facility") || contientMot(id, "Unit") || contientMot(id, "Plant") || contientMot(id, "Module")) {
         return NOEUD_USINE;
     }
@@ -174,7 +174,7 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
     while (fgets(buffer, sizeof(buffer), fichier)) {
         buffer[strcspn(buffer, "\r\n")] = 0;
         
-        if (buffer[0] == '\0' || contientMot(buffer, "Source;")) {
+        if (buffer[0] == '\0') {
             continue;
         }
 
@@ -219,7 +219,7 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
                 enfant->pourcentage_fuite = ligne->pourcentage_fuite;
             }
 
-            // Calcul spécifique pour le volume capté (Source -> Usine)
+            // Calcul du volume capté (Source -> Usine)
             if (parent->type == NOEUD_SOURCE && enfant->type == NOEUD_USINE) {
                 if (ligne->volume != -1) {
                     DonneesUsine* d = malloc(sizeof(DonneesUsine));
@@ -237,7 +237,6 @@ int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche
         liberer_ligne_csv(ligne);
     }
     
-    printf("Chargement termine : %d lignes de donnees traitees.\n", lignes_traitees);
     fclose(fichier);
     return 0;
 }
