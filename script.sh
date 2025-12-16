@@ -1,6 +1,4 @@
 #!/bin/bash
-
-# Force le format des nombres avec un point (important pour Gnuplot)
 export LC_NUMERIC=C
 
 PROGRAMME_C="./c-wildwater"
@@ -51,12 +49,22 @@ generer_png() {
     [ ! -f "$fichier" ] && erreur "Le fichier de données '$fichier' n'existe pas."
     
     base="${fichier%.*}"
+    label_y="Volume" # Par défaut
 
     case $type in
-        max)  titre="Capacité maximale" ;;
-        src)  titre="Volume capté" ;;
-        real) titre="Volume traité" ;; 
-        all)  titre="Volumes (Tous)" ;;
+        max)  
+            titre="Capacité maximale"
+            label_y="Quantité" # Spécifique pour max
+            ;;
+        src)  
+            titre="Volume capté" 
+            ;;
+        real) 
+            titre="Volume traité" 
+            ;; 
+        all)  
+            titre="Volumes (Tous)" 
+            ;;
         *) erreur "Type d'histogramme inconnu" ;;
     esac
 
@@ -72,9 +80,8 @@ generer_png() {
     tail -n +2 "$fichier" | sort -t";" -k2,2g > "$tri"
 
     if [ ! -s "$tri" ]; then
-        erreur "Le fichier $fichier ne contient aucune donnée valide pour Gnuplot."
+        erreur "Le fichier $fichier ne contient aucune donnée valide."
     fi
-
 
     cat "$head" > "$small"
     head -n 50 "$tri" >> "$small"
@@ -82,44 +89,25 @@ generer_png() {
     cat "$head" > "$big"
     tail -n 10 "$tri" >> "$big"
 
+    common_gp="set datafile separator ';'; set style fill solid; set xtics rotate by -45; set xlabel 'Identifiants'; set ylabel '$label_y (M.m3/an)';"
 
-    echo "set terminal png size 1200,800" > "$gp"
-    echo "set datafile separator ';'" >> "$gp"
-    echo "set style fill solid" >> "$gp"
-    echo "set xtics rotate by -45" >> "$gp"
-    
+    echo "set terminal png size 1200,800; set output '${base}_small.png';" > "$gp"
+    echo "$common_gp" >> "$gp"
+    echo "set title '${titre} (50 plus petites usines)';" >> "$gp"
+    echo "plot '$small' using 2:xtic(1) with boxes title '';" >> "$gp"
+    gnuplot "$gp" || erreur "Erreur Gnuplot (50 petites)"
 
-    echo "set xlabel 'Identifiants'" >> "$gp"
-    echo "set ylabel 'Quantité (M.m3/an)'" >> "$gp"
-
-    echo "set output '${base}_small.png'" >> "$gp"
-    echo "set title '${titre} (50 plus petites usines)'" >> "$gp"
-    echo "plot '$small' using 2:xtic(1) with boxes title ''" >> "$gp"
-    gnuplot "$gp" || erreur "Erreur Gnuplot (50 petites usines)"
-
-    echo "set output '${base}_big.png'" > "$gp"
-    echo "set terminal png size 1200,800" >> "$gp"
-    echo "set datafile separator ';'" >> "$gp"
-    echo "set style fill solid" >> "$gp"
-    echo "set xtics rotate by -45" >> "$gp"
-
-    echo "set xlabel 'Identifiants'" >> "$gp"
-    echo "set ylabel 'Quantité (M.m3/an)'" >> "$gp"
-
-    echo "set title '${titre} (10 plus grandes usines)'" >> "$gp"
-    echo "plot '$big' using 2:xtic(1) with boxes title ''" >> "$gp"
-    gnuplot "$gp" || erreur "Erreur Gnuplot (10 grandes usines)"
+    echo "set terminal png size 1200,800; set output '${base}_big.png';" > "$gp"
+    echo "$common_gp" >> "$gp"
+    echo "set title '${titre} (10 plus grandes usines)';" >> "$gp"
+    echo "plot '$big' using 2:xtic(1) with boxes title '';" >> "$gp"
+    gnuplot "$gp" || erreur "Erreur Gnuplot (10 grandes)"
 
     echo "Images générées : ${base}_small.png et ${base}_big.png"
 }
 
 traitement_histo() {
     type=$1
-    case "$type" in
-        max|src|real|all) ;;
-        *) erreur "Option histo invalide : $type" ;;
-    esac
-    
     echo "Traitement histogramme ($type)..."
     sortie=$($PROGRAMME_C "$CSV" histo "$type" 2>&1)
     retour=$?
@@ -127,50 +115,30 @@ traitement_histo() {
     [ $retour -ne 0 ] && erreur "Erreur du programme C (code $retour)."
     
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
-    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré du programme C."
-    [ ! -f "$fichier" ] && erreur "Fichier $fichier non généré."
+    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré."
     
-    echo "Fichier de données : $fichier"
     generer_png "$fichier" "$type"
 }
 
 traitement_leaks() {
     id="$1"
-    [ -z "$id" ] && erreur "Aucun ID fourni."
-
     echo "Calcul des fuites pour $id..."
     sortie=$($PROGRAMME_C "$CSV" leaks "$id" 2>&1)
-    retour=$?
-
     fichier=$(echo "$sortie" | grep "FICHIER_GENERE:" | cut -d: -f2)
-    [ -z "$fichier" ] && erreur "Nom de fichier non récupéré."
-
     [ -f "$fichier" ] || erreur "Fichier $fichier introuvable"
-    echo "Résultat enregistré dans : $fichier"
     cat "$fichier"
 }
 
 [ $# -lt 2 ] && usage
-
 CSV="$1"
 shift
-
 verifier_fichier
 verifier_compilation
-command -v gnuplot >/dev/null || erreur "gnuplot n'est pas installé sur ce système."
 
 case $1 in
-    histo)
-        [ $# -ne 2 ] && usage
-        traitement_histo "$2"
-        ;;
-    leaks)
-        [ $# -ne 2 ] && usage
-        traitement_leaks "$2"
-        ;;
-    *)
-        usage
-        ;;
+    histo) traitement_histo "$2" ;;
+    leaks) traitement_leaks "$2" ;;
+    *) usage ;;
 esac
 
 duree_totale
