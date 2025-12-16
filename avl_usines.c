@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include "utils.h"
 
+// Crée un nouveau noeud pour l'AVL des usines
 NoeudAVLUsine* creerNoeudAVLUsine(DonneesUsine* donnees) {
-    NoeudAVLUsine* nouveau =malloc(sizeof(NoeudAVLUsine));
+    NoeudAVLUsine* nouveau = malloc(sizeof(NoeudAVLUsine));
     if (nouveau == NULL) {
         return NULL;  
     }
@@ -15,7 +16,7 @@ NoeudAVLUsine* creerNoeudAVLUsine(DonneesUsine* donnees) {
     return nouveau;
 }
 
-
+// Libère récursivement l'AVL et les données associées
 void libererAVLUsine(NoeudAVLUsine* racine) {
     if (racine == NULL) {
         return; 
@@ -31,117 +32,72 @@ void libererAVLUsine(NoeudAVLUsine* racine) {
     free(racine);  
 }
 
-
 int hauteurAVLUsine(NoeudAVLUsine* noeud) {
-    if (noeud == NULL) {
-        return 0;
-    }
+    if (noeud == NULL) return 0;
     return noeud->hauteur;
 }
 
-
 int equilibreAVLUsine(NoeudAVLUsine* noeud) {
-    if (noeud == NULL) {
-        return 0;
-    }
+    if (noeud == NULL) return 0;
     return hauteurAVLUsine(noeud->droit) - hauteurAVLUsine(noeud->gauche);
 }
 
+// --- Fonctions de rotation pour l'équilibrage ---
 
-void mettreAJourHauteur(NoeudAVLUsine* noeud) {
-    if (noeud != NULL) {
-        int hauteurGauche = hauteurAVLUsine(noeud->gauche);
-        int hauteurDroit = hauteurAVLUsine(noeud->droit);
-        noeud->hauteur = 1 + max(hauteurGauche, hauteurDroit);
-    }
+NoeudAVLUsine* rotationGaucheUsine(NoeudAVLUsine* racine) {
+    NoeudAVLUsine* nouveau = racine->droit;
+    racine->droit = nouveau->gauche;
+    nouveau->gauche = racine;
+    racine->hauteur = 1 + max(hauteurAVLUsine(racine->gauche), hauteurAVLUsine(racine->droit));
+    nouveau->hauteur = 1 + max(hauteurAVLUsine(nouveau->gauche), hauteurAVLUsine(nouveau->droit));
+    return nouveau;
 }
 
-
-NoeudAVLUsine* rotationGaucheUsine(NoeudAVLUsine* x) {
-    if (x == NULL) {
-        return NULL;
-    }
-    NoeudAVLUsine* y = x->droit;
-    if (y == NULL) {
-        return x;
-    }
-    NoeudAVLUsine* T2 = y->gauche;
-    y->gauche = x;
-    x->droit = T2;
-    mettreAJourHauteur(x);
-    mettreAJourHauteur(y);
-    return y;  
+NoeudAVLUsine* rotationDroiteUsine(NoeudAVLUsine* racine) {
+    NoeudAVLUsine* nouveau = racine->gauche;
+    racine->gauche = nouveau->droit;
+    nouveau->droit = racine;
+    racine->hauteur = 1 + max(hauteurAVLUsine(racine->gauche), hauteurAVLUsine(racine->droit));
+    nouveau->hauteur = 1 + max(hauteurAVLUsine(nouveau->gauche), hauteurAVLUsine(nouveau->droit));
+    return nouveau;
 }
-
-
-NoeudAVLUsine* rotationDroiteUsine(NoeudAVLUsine* y) {
-    if (y == NULL) {
-        return NULL;
-    }
-    NoeudAVLUsine* x = y->gauche;
-    if (x == NULL) {
-        return y;
-    }
-    
-    NoeudAVLUsine* T2 = x->droit;
-    x->droit = y;
-    y->gauche = T2;
-    mettreAJourHauteur(y);
-    mettreAJourHauteur(x);
-    return x; 
-}
-
 
 NoeudAVLUsine* equilibrerAVLUsine(NoeudAVLUsine* racine) {
-    if (racine == NULL) {
-        return NULL;
-    }
-    mettreAJourHauteur(racine);
-    int equilibre = equilibreAVLUsine(racine);
-    if (equilibre < -1 && equilibreAVLUsine(racine->gauche) <= 0) {
-        return rotationDroiteUsine(racine);
-    }
-    if (equilibre > 1 && equilibreAVLUsine(racine->droit) >= 0) {
+    int eq = equilibreAVLUsine(racine);
+    if (eq > 1) {
+        if (equilibreAVLUsine(racine->droit) < 0) {
+            racine->droit = rotationDroiteUsine(racine->droit);
+        }
         return rotationGaucheUsine(racine);
     }
-    if (equilibre < -1 && equilibreAVLUsine(racine->gauche) > 0) {
-        racine->gauche = rotationGaucheUsine(racine->gauche);
+    if (eq < -1) {
+        if (equilibreAVLUsine(racine->gauche) > 0) {
+            racine->gauche = rotationGaucheUsine(racine->gauche);
+        }
         return rotationDroiteUsine(racine);
     }
-    if (equilibre > 1 && equilibreAVLUsine(racine->droit) < 0) {
-        racine->droit = rotationDroiteUsine(racine->droit);
-        return rotationGaucheUsine(racine);
-    }
-    return racine; 
+    return racine;
 }
 
-
+// Insertion avec maintien de l'équilibre
 NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees) {
-    if (racine == NULL) {
-        return creerNoeudAVLUsine(donnees);
-    }
-    int comparaison = comparerChaines(donnees->identifiant, racine->donnees->identifiant);
+    if (racine == NULL) return creerNoeudAVLUsine(donnees);
     
+    int comparaison = comparerChaines(donnees->identifiant, racine->donnees->identifiant);
     if (comparaison < 0) {
         racine->gauche = insererAVLUsine(racine->gauche, donnees);
     } else if (comparaison > 0) {
         racine->droit = insererAVLUsine(racine->droit, donnees);
     } else {
-        racine->donnees->capacite_max += donnees->capacite_max;
-        racine->donnees->total_capte += donnees->total_capte;
-        racine->donnees->total_traite += donnees->total_traite;
-        free(donnees->identifiant);
-        free(donnees);
-        return racine; 
+        return racine; // Doublon ignoré
     }
+    
+    racine->hauteur = 1 + max(hauteurAVLUsine(racine->gauche), hauteurAVLUsine(racine->droit));
     return equilibrerAVLUsine(racine);
 }
 
-
 DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
-    if (racine == NULL) {
-        return NULL; 
-    }
+    if (racine == NULL) return NULL; 
     
     int comparaison = comparerChaines(identifiant, racine->donnees->identifiant);
     if (comparaison == 0) {
@@ -153,20 +109,27 @@ DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
     }
 }
 
-
 void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
-    if (racine == NULL) {
-        return; 
-    }
-    parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
+    if (racine == NULL) return; 
+    
+    // 1. Parcours du sous-arbre droit (valeurs alphabétiques supérieures)
+    parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
+    
+    // 2. Traitement du noeud courant (Racine)
     if (type_histo == 0) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0);
     } else if (type_histo == 1) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte/1000.0);
     } else if (type_histo == 2) {
         fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite/1000.0);
-    } else if (type_histo == 3) { 
-        fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0, racine->donnees->total_capte/1000.0, racine->donnees->total_traite/1000.0);
+    } else if (type_histo == 3) {
+        fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", 
+                racine->donnees->identifiant, 
+                racine->donnees->capacite_max/1000.0, 
+                racine->donnees->total_capte/1000.0, 
+                racine->donnees->total_traite/1000.0);
     }
-  parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
+    
+    // 3. Parcours du sous-arbre gauche (valeurs alphabétiques inférieures)
+    parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
 }
