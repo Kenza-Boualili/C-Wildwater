@@ -4,48 +4,56 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Optimisation : Identification par premier caractère (plus rapide que strstr)
-TypeNoeud deduireType(char* id) {
-    if (id == NULL) return NOEUD_JONCTION;
-    switch (id[0]) {
-        case 'S':
-            if (strncmp(id, "Spring", 6) == 0) return NOEUD_SOURCE;
-            if (strncmp(id, "Service", 7) == 0) return NOEUD_SERVICE;
-            if (strncmp(id, "Storage", 7) == 0) return NOEUD_STOCKAGE;
-            break;
-        case 'W':
-            if (strncmp(id, "Well", 4) == 0) return NOEUD_SOURCE;
-            break;
-        case 'F':
-            if (strncmp(id, "Facility", 8) == 0) return NOEUD_USINE;
-            if (strncmp(id, "Fountain", 8) == 0) return NOEUD_SOURCE;
-            break;
-        case 'R':
-            if (strncmp(id, "Resurgence", 10) == 0) return NOEUD_SOURCE;
-            break;
-        case 'U':
-            if (strncmp(id, "Unit", 4) == 0) return NOEUD_USINE;
-            break;
-        case 'P':
-            if (strncmp(id, "Plant", 5) == 0) return NOEUD_USINE;
-            break;
-        case 'M':
-            if (strncmp(id, "Module", 6) == 0) return NOEUD_USINE;
-            break;
-        case 'J':
-            if (strncmp(id, "Junction", 8) == 0) return NOEUD_JONCTION;
-            break;
-        case 'C':
-            if (strncmp(id, "Cust", 4) == 0) return NOEUD_CLIENT;
-            break;
+// Fonction utilitaire pour vérifier si une sous-chaine est présente
+int contientMot(char* chaine, char* sous_chaine) {
+    if (chaine == NULL || sous_chaine == NULL || sous_chaine[0] == '\0') {
+        return 0;
     }
+    return strstr(chaine, sous_chaine) != NULL;
+}
+
+// Fonction corrigée pour identifier tous les types d'acteurs du projet
+TypeNoeud deduireType(char* id) {
+    // Identification des SOURCES (Spring, Well, Fountain, Resurgence, etc.)
+    if (contientMot(id, "Spring") || contientMot(id, "Well") || contientMot(id, "Fountain") || contientMot(id, "Resurgence")) {
+        return NOEUD_SOURCE;
+    }
+    
+    // Identification des USINES (Reconnaît Facility, Unit, Plant, Module)
+    if (contientMot(id, "Facility") || contientMot(id, "Unit") || contientMot(id, "Plant") || contientMot(id, "Module")) {
+        return NOEUD_USINE;
+    }
+    
+    // Identification des STOCKAGES
+    if (contientMot(id, "Storage")) {
+        return NOEUD_STOCKAGE;
+    }
+    
+    // Identification des JONCTIONS
+    if (contientMot(id, "Junction")) {
+        return NOEUD_JONCTION;
+    }
+    
+    // Identification des SERVICES (Raccordements)
+    if (contientMot(id, "Service")) {
+        return NOEUD_SERVICE;
+    }
+    
+    // Identification des CLIENTS (Usagers)
+    if (contientMot(id, "Cust")) {
+        return NOEUD_CLIENT;
+    }
+
+    // Par défaut
     return NOEUD_JONCTION;
 }
 
 // Alloue et initialise un nouveau noeud de distribution
 NoeudDistribution* creerNoeudDistribution(char* id) {
     NoeudDistribution* n = malloc(sizeof(NoeudDistribution));
-    if (n == NULL) return NULL;
+    if (n == NULL) {
+        return NULL;
+    }
 
     n->identifiant = dupliquerChaine(id);
     if (n->identifiant == NULL) {
@@ -67,14 +75,19 @@ NoeudDistribution* creerNoeudDistribution(char* id) {
     return n;
 }
 
-// Gère l'ajout d'enfants dynamiquement
 void ajouterEnfant(NoeudDistribution* parent, NoeudDistribution* enfant) {
-    if (parent == NULL || enfant == NULL) return;
+    if (parent == NULL || enfant == NULL) {
+        return;
+    }
 
     if (parent->nb_enfants >= parent->capacite_enfants) {
         int nouvelle_cap = (parent->capacite_enfants == 0) ? 5 : parent->capacite_enfants * 2;
+        
         NoeudDistribution** nouveau_tableau = realloc(parent->enfants, nouvelle_cap * sizeof(NoeudDistribution*));
-        if (nouveau_tableau == NULL) return;
+        if (nouveau_tableau == NULL) {
+            return;
+        }
+        
         parent->enfants = nouveau_tableau;
         parent->capacite_enfants = nouvelle_cap;
     }
@@ -84,74 +97,147 @@ void ajouterEnfant(NoeudDistribution* parent, NoeudDistribution* enfant) {
     enfant->parent = parent;
 }
 
-// Charge le CSV en utilisant un parsing "in-place" pour la performance
+LigneCSV* lire_ligne_csv(char* ligne) {
+    if (ligne == NULL || ligne[0] == '\0') {
+        return NULL;
+    }
+    
+    LigneCSV* resultat = malloc(sizeof(LigneCSV));
+    if (resultat == NULL) {
+        return NULL;
+    }
+    
+    resultat->usine_traitement = NULL;
+    resultat->id_amont = NULL;
+    resultat->id_aval = NULL;
+    resultat->volume = -1;
+    resultat->pourcentage_fuite = -1;
+    
+    char* copie = dupliquerChaine(ligne);
+    char* champs[5] = {NULL};
+    int colonne = 0;
+    char* ptr = copie;
+    char* debut = copie;
+
+    while (*ptr != '\0' && colonne < 5) {
+        if (*ptr == ';') {
+            *ptr = '\0';
+            champs[colonne++] = debut;
+            debut = ptr + 1;
+        }
+        ptr++;
+    }
+    if (colonne < 5) {
+        champs[colonne] = debut;
+    }
+
+    if (champs[0] && strcmp(champs[0], "-") != 0) {
+        resultat->usine_traitement = dupliquerChaine(champs[0]);
+    }
+    if (champs[1] && strcmp(champs[1], "-") != 0) {
+        resultat->id_amont = dupliquerChaine(champs[1]);
+    }
+    if (champs[2] && strcmp(champs[2], "-") != 0) {
+        resultat->id_aval = dupliquerChaine(champs[2]);
+    }
+    if (champs[3] && strcmp(champs[3], "-") != 0) {
+        resultat->volume = atof(champs[3]);
+    }
+    if (champs[4] && strcmp(champs[4], "-") != 0) {
+        resultat->pourcentage_fuite = atof(champs[4]);
+    }
+    
+    free(copie);
+    return resultat;
+}
+
+void liberer_ligne_csv(LigneCSV* ligne) {
+    if (ligne == NULL) {
+        return;
+    }
+    free(ligne->usine_traitement);
+    free(ligne->id_amont);
+    free(ligne->id_aval);
+    free(ligne);
+}
+
 int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche** avl_recherche) {
     FILE* fichier = fopen(nom_fichier, "r");
     if (fichier == NULL) {
         fprintf(stderr, "Erreur: Impossible d'ouvrir %s\n", nom_fichier);
         return -1;
     }
-
-    char buffer[1024];
+    
+    char buffer[8192];
+    int lignes_traitees = 0;
+    
     while (fgets(buffer, sizeof(buffer), fichier)) {
         buffer[strcspn(buffer, "\r\n")] = 0;
-        if (buffer[0] == '\0') continue;
-
-        char *champs[5] = {NULL};
-        char *ptr = buffer;
-        int col = 0;
-        champs[col++] = ptr;
-
-        // Découpage manuel de la ligne par les ';' sans duplication mémoire
-        while (*ptr && col < 5) {
-            if (*ptr == ';') {
-                *ptr = '\0';
-                champs[col++] = ptr + 1;
-            }
-            ptr++;
+        
+        if (buffer[0] == '\0') {
+            continue;
         }
 
-        char* id_amont = (champs[1] && champs[1][0] == '-') ? NULL : champs[1];
-        char* id_aval = (champs[2] && champs[2][0] == '-') ? NULL : champs[2];
-        double volume = (champs[3] && champs[3][0] == '-') ? -1.0 : atof(champs[3]);
-        double fuite = (champs[4] && champs[4][0] == '-') ? -1.0 : atof(champs[4]);
+        LigneCSV* ligne = lire_ligne_csv(buffer);
+        if (ligne == NULL) {
+            continue;
+        }
 
-        if (id_amont && !id_aval) { // Cas d'une définition d'usine
-            if (volume != -1) {
+        // Cas d'une ligne de définition (Usine seule)
+        if (ligne->id_aval == NULL) {
+            if (ligne->volume != -1) {
                 DonneesUsine* u = malloc(sizeof(DonneesUsine));
-                u->identifiant = dupliquerChaine(id_amont);
-                u->capacite_max = volume;
-                u->total_capte = 0; u->total_traite = 0;
+                u->identifiant = dupliquerChaine(ligne->id_amont);
+                u->capacite_max = ligne->volume;
+                u->total_capte = 0;
+                u->total_traite = 0;
                 *avl_usines = insererAVLUsine(*avl_usines, u);
             }
-            if (rechercherNoeud(*avl_recherche, id_amont) == NULL) {
-                *avl_recherche = insererAVLRecherche(*avl_recherche, id_amont, creerNoeudDistribution(id_amont));
-            }
-        } else if (id_amont && id_aval) { // Cas d'un tronçon
-            NoeudDistribution* parent = rechercherNoeud(*avl_recherche, id_amont);
-            if (!parent) {
-                parent = creerNoeudDistribution(id_amont);
-                *avl_recherche = insererAVLRecherche(*avl_recherche, id_amont, parent);
-            }
-            NoeudDistribution* enfant = rechercherNoeud(*avl_recherche, id_aval);
-            if (!enfant) {
-                enfant = creerNoeudDistribution(id_aval);
-                *avl_recherche = insererAVLRecherche(*avl_recherche, id_aval, enfant);
-            }
-            ajouterEnfant(parent, enfant);
-            if (fuite != -1) enfant->pourcentage_fuite = fuite;
 
-            // Mise à jour des volumes d'usine pour les histogrammes
-            if (parent->type == NOEUD_SOURCE && enfant->type == NOEUD_USINE && volume != -1) {
-                DonneesUsine* d = malloc(sizeof(DonneesUsine));
-                d->identifiant = dupliquerChaine(enfant->identifiant);
-                d->capacite_max = 0; d->total_capte = volume;
-                double p = (fuite != -1) ? fuite : 0;
-                d->total_traite = volume * (1.0 - (p / 100.0));
-                *avl_usines = insererAVLUsine(*avl_usines, d);
+            if (rechercherNoeud(*avl_recherche, ligne->id_amont) == NULL) {
+                NoeudDistribution* n = creerNoeudDistribution(ligne->id_amont);
+                *avl_recherche = insererAVLRecherche(*avl_recherche, ligne->id_amont, n);
+            }
+        } 
+        // Cas d'un tronçon (Lien amont -> aval)
+        else {
+            NoeudDistribution* parent = rechercherNoeud(*avl_recherche, ligne->id_amont);
+            if (parent == NULL) {
+                parent = creerNoeudDistribution(ligne->id_amont);
+                *avl_recherche = insererAVLRecherche(*avl_recherche, ligne->id_amont, parent);
+            }
+
+            NoeudDistribution* enfant = rechercherNoeud(*avl_recherche, ligne->id_aval);
+            if (enfant == NULL) {
+                enfant = creerNoeudDistribution(ligne->id_aval);
+                *avl_recherche = insererAVLRecherche(*avl_recherche, ligne->id_aval, enfant);
+            }
+
+            ajouterEnfant(parent, enfant);
+            
+            if (ligne->pourcentage_fuite != -1) {
+                enfant->pourcentage_fuite = ligne->pourcentage_fuite;
+            }
+
+            // Calcul du volume capté (Source -> Usine)
+            if (parent->type == NOEUD_SOURCE && enfant->type == NOEUD_USINE) {
+                if (ligne->volume != -1) {
+                    DonneesUsine* d = malloc(sizeof(DonneesUsine));
+                    d->identifiant = dupliquerChaine(enfant->identifiant);
+                    d->capacite_max = 0; 
+                    d->total_capte = ligne->volume;
+                    double p = (ligne->pourcentage_fuite != -1) ? ligne->pourcentage_fuite : 0;
+                    d->total_traite = ligne->volume * (1.0 - (p / 100.0));
+                    *avl_usines = insererAVLUsine(*avl_usines, d);
+                }
             }
         }
+        
+        lignes_traitees++;
+        liberer_ligne_csv(ligne);
     }
+    
     fclose(fichier);
     return 0;
 }
+
