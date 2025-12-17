@@ -14,7 +14,3 @@ char* dupliquerChaine(char* source) {
     if (source == NULL) return NULL;
     return strdup(source);
 }
-
-int max(int a, int b) {
-    return (a > b) ? a : b;
-}
