@@ -143,3 +143,4 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
     // 3. Enfin le sous-arbre GAUCHE (IDs les plus bas / A)
     parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
 }
+
