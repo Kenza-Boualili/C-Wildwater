@@ -120,9 +120,9 @@ EOF
     # Exécution de Gnuplot
     if command -v gnuplot >/dev/null 2>&1; then
         gnuplot "$gp_script"
-        echo "✅ Image générée : ${base}_combined.png"
+        echo "Image générée : ${base}_combined.png"
     else
-        echo "⚠ Gnuplot non trouvé. Seul le fichier .dat est conservé."
+        echo "Gnuplot non trouvé. Seul le fichier .dat est conservé."
     fi
 
     # Nettoyage des fichiers temporaires
