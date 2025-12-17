@@ -1,13 +1,9 @@
 #ifndef LECTURE_CSV_H
 #define LECTURE_CSV_H
-
 #include "structures.h"
 #include "avl_usines.h" 
 #include "avl_recherche.h"
 
-/**
- * Structure temporaire utilisée pour le parsing d'une ligne du CSV.
- */
 typedef struct {
     char* usine_traitement;
     char* id_amont;
@@ -16,26 +12,12 @@ typedef struct {
     double pourcentage_fuite;
 } LigneCSV;
 
-/**
- * Détermine le type de nœud (Source, Usine, etc.) à partir de son identifiant.
- * Optimisé pour utiliser strncmp au lieu de strstr.
- */
+int contientMot(char* chaine, char* sous_chaine);
 TypeNoeud deduireType(char* id);
-
-/**
- * Alloue et initialise un nouveau nœud de distribution.
- */
 NoeudDistribution* creerNoeudDistribution(char* id);
-
-/**
- * Ajoute un nœud enfant à un nœud parent et gère la réallocation dynamique du tableau.
- */
 void ajouterEnfant(NoeudDistribution* parent, NoeudDistribution* enfant);
-
-/**
- * Charge l'intégralité du fichier CSV et construit les structures de données (AVL).
- * Cette version est optimisée pour un parsing rapide sans allocations inutiles.
- */
+LigneCSV* lire_ligne_csv(char* ligne);
+void liberer_ligne_csv(LigneCSV* ligne);
 int charger_csv(char* nom_fichier, NoeudAVLUsine** avl_usines, NoeudAVLRecherche** avl_recherche);
 
 #endif
