@@ -6,3 +6,4 @@ char* dupliquerChaine(char* source);
 int max(int a, int b);
 
 #endif
+
