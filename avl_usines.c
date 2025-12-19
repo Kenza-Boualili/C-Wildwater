@@ -42,8 +42,7 @@ int equilibreAVLUsine(NoeudAVLUsine* noeud) {
     return hauteurAVLUsine(noeud->droit) - hauteurAVLUsine(noeud->gauche);
 }
 
-// --- Fonctions de rotation pour l'équilibrage ---
-
+//Fonctions de rotation pour l'équilibrage 
 NoeudAVLUsine* rotationGaucheUsine(NoeudAVLUsine* racine) {
     NoeudAVLUsine* nouveau = racine->droit;
     racine->droit = nouveau->gauche;
@@ -81,7 +80,9 @@ NoeudAVLUsine* equilibrerAVLUsine(NoeudAVLUsine* racine) {
 
 // Insertion avec maintien de l'équilibre
 NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees) {
-    if (racine == NULL) return creerNoeudAVLUsine(donnees);
+    if (racine == NULL) {
+        return creerNoeudAVLUsine(donnees);
+    }
     
     int comparaison = comparerChaines(donnees->identifiant, racine->donnees->identifiant);
     if (comparaison < 0) {
@@ -90,7 +91,6 @@ NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees) {
         racine->droit = insererAVLUsine(racine->droit, donnees);
     } else {
         // Mise à jour des données si l'usine existe déjà
-        racine->donnees->capacite_max += donnees->capacite_max;
         racine->donnees->total_capte += donnees->total_capte;
         racine->donnees->total_traite += donnees->total_traite;
         free(donnees->identifiant);
@@ -103,8 +103,9 @@ NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees) {
 }
 
 DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
-    if (racine == NULL) return NULL; 
-    
+    if (racine == NULL){
+    return NULL; 
+    } 
     int comparaison = comparerChaines(identifiant, racine->donnees->identifiant);
     if (comparaison == 0) {
         return racine->donnees; 
@@ -115,32 +116,35 @@ DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant) {
     }
 }
 
-/**
- * PARCOURS CORRIGÉ : Tri alphabétique INVERSE (Z -> A) 
- * Pour respecter la consigne, on parcourt : Fils Droit -> Racine -> Fils Gauche
- */
-void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
-    if (racine == NULL) return; 
+// Fonction pour ajuster (plafonner) les volumes traités par les usines
+// selon leur capacité maximale théorique
+void plafonnerVolumesUsines(NoeudAVLUsine* racine) {
+    if (racine == NULL){
+    return;
+    } 
+    plafonnerVolumesUsines(racine->gauche);
     
-    // 1. D'abord le sous-arbre DROIT (IDs les plus élevés / Z)
-    parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
-    
-    // 2. Traitement du noeud (Racine) : conversion en M.m3
-    if (type_histo == 0) {
-        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->capacite_max/1000.0);
-    } else if (type_histo == 1) {
-        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_capte/1000.0);
-    } else if (type_histo == 2) {
-        fprintf(fichier, "%s;%.2f\n", racine->donnees->identifiant, racine->donnees->total_traite/1000.0);
-    } else if (type_histo == 3) {
-        fprintf(fichier, "%s;%.2f;%.2f;%.2f\n", 
-                racine->donnees->identifiant, 
-                racine->donnees->capacite_max/1000.0, 
-                racine->donnees->total_capte/1000.0, 
-                racine->donnees->total_traite/1000.0);
+    // Si le calcul dépasse la capacité de l'usine, on plafonne
+    if (racine->donnees->capacite_max > 0 && racine->donnees->total_traite > racine->donnees->capacite_max) {
+        racine->donnees->total_traite = racine->donnees->capacite_max;
     }
     
-    // 3. Enfin le sous-arbre GAUCHE (IDs les plus bas / A)
-    parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
+    plafonnerVolumesUsines(racine->droit);
 }
 
+void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo) {
+    if (racine == NULL){
+    return; 
+    } 
+    // On parcourt de Droite à Gauche pour avoir un tri alphabétique Z -> A
+    parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
+    
+    double valeur = 0.0;
+    if (type_histo == 0) valeur = racine->donnees->capacite_max;
+    else if (type_histo == 1) valeur = racine->donnees->total_capte;
+    else if (type_histo == 2) valeur = racine->donnees->total_traite;
+
+    // Écriture : ID ; Valeur (Real/Src) ; Capacité 
+    fprintf(fichier, "%s;%.2f;%.2f\n", racine->donnees->identifiant, valeur, racine->donnees->capacite_max);
+    parcoursInverseAVLUsine(racine->gauche, fichier, type_histo);
+}
