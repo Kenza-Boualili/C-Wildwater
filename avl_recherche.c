@@ -1,7 +1,9 @@
 #include "avl_recherche.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include "utils.h"
 
+// Fonction pour créer un nouveau noeud dans l'arbre AVL de recherche
 NoeudAVLRecherche* creerNoeudAVLRecherche(char* identifiant, NoeudDistribution* noeud) {
     NoeudAVLRecherche* nouveau =malloc(sizeof(NoeudAVLRecherche));
     if (nouveau == NULL) {
@@ -22,33 +24,49 @@ NoeudAVLRecherche* creerNoeudAVLRecherche(char* identifiant, NoeudDistribution* 
     return nouveau;
 }
 
-
+// Fonction pour libérer récursivement toute la mémoire de l'arbre AVL de recherche
 void libererAVLRecherche(NoeudAVLRecherche* racine) {
     if (racine == NULL) {
         return;
     }
+
+    // Parcours récursif
     libererAVLRecherche(racine->gauche);
     libererAVLRecherche(racine->droit);
+    if (racine->pointeur_noeud != NULL) {
+        // Libérer le tableau d'enfants alloué par realloc
+        if (racine->pointeur_noeud->enfants != NULL) {
+            free(racine->pointeur_noeud->enfants);
+        }
+        // Libérer l'identifiant du noeud de distribution
+        if (racine->pointeur_noeud->identifiant != NULL) {
+            free(racine->pointeur_noeud->identifiant);
+        }
+        // Libérer la structure elle-même
+        free(racine->pointeur_noeud);
+    }
+
+    // Libération des données propres à l'AVL
     free(racine->identifiant);
     free(racine);
 }
 
+// Fonction pour libérer récursivement un arbre de distribution complet
 void libererArbreDistribution(NoeudDistribution* racine) {
     if (racine == NULL) {
         return;
     }
+
     for (int i = 0; i < racine->nb_enfants; i++) {
-        libererArbreDistribution(racine->enfants[i]);
+        libererArbreDistribution(racine->enfants[i].enfant);
     }
-    if (racine->enfants != NULL) {
-        free(racine->enfants);
-    }
-    if (racine->identifiant != NULL) {
-        free(racine->identifiant);
-    }
+
+    free(racine->enfants);
+    free(racine->identifiant);
     free(racine);
 }
 
+// Fonction pour obtenir la hauteur d'un noeud AVL
 int hauteurAVLRecherche(NoeudAVLRecherche* noeud) {
     if (noeud == NULL) {
         return 0;
@@ -56,7 +74,7 @@ int hauteurAVLRecherche(NoeudAVLRecherche* noeud) {
     return noeud->hauteur;
 }
 
-
+// Rotation simple à gauche pour rééquilibrer l'arbre AVL
 NoeudAVLRecherche* rotationGaucheRecherche(NoeudAVLRecherche* x) {
     if (x == NULL) {
         return NULL;
@@ -78,7 +96,7 @@ NoeudAVLRecherche* rotationGaucheRecherche(NoeudAVLRecherche* x) {
     return y; 
 }
 
-
+// Rotation simple à droite pour rééquilibrer l'arbre AVL
 NoeudAVLRecherche* rotationDroiteRecherche(NoeudAVLRecherche* y) {
     if (y == NULL) {
         return NULL;
@@ -99,15 +117,12 @@ NoeudAVLRecherche* rotationDroiteRecherche(NoeudAVLRecherche* y) {
     return x; 
 }
 
-
+// Fonction pour équilibrer un noeud AVL après insertion/suppression
 NoeudAVLRecherche* equilibrerAVLRecherche(NoeudAVLRecherche* racine) {
     if (racine == NULL) {
         return NULL;
     }
-    racine->hauteur = 1 + max(hauteurAVLRecherche(racine->gauche), 
-                             hauteurAVLRecherche(racine->droit));
-                             
- 
+    racine->hauteur = 1 + max(hauteurAVLRecherche(racine->gauche), hauteurAVLRecherche(racine->droit));
     int equilibre = hauteurAVLRecherche(racine->droit) - hauteurAVLRecherche(racine->gauche);
     
     if (equilibre > 1) {
@@ -131,7 +146,7 @@ NoeudAVLRecherche* equilibrerAVLRecherche(NoeudAVLRecherche* racine) {
     return racine;
 }
 
-
+// Fonction pour insérer un nouvel élément dans l'arbre AVL de recherche
 NoeudAVLRecherche* insererAVLRecherche(NoeudAVLRecherche* racine, char* identifiant, NoeudDistribution* noeud) {
     if (racine == NULL) {
         return creerNoeudAVLRecherche(identifiant, noeud); 
@@ -150,7 +165,7 @@ NoeudAVLRecherche* insererAVLRecherche(NoeudAVLRecherche* racine, char* identifi
     return equilibrerAVLRecherche(racine);
 }
 
-
+// Fonction de recherche dans l'arbre AVL
 NoeudDistribution* rechercherNoeud(NoeudAVLRecherche* racine, char* identifiant) {
     if (racine == NULL) {
         return NULL; 
