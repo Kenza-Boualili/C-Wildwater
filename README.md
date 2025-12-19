@@ -1,125 +1,154 @@
-# 💧 C-WildWater — Analyse d’un Réseau de Distribution d’Eau
+# 🌊 C-WildWater — Projet Informatique préING2
 
-## 📘 Description
+## 📌 Description générale
+Ce projet consiste à analyser et synthétiser des données issues d’un **système de distribution d’eau potable**, à partir d’un fichier CSV volumineux (jusqu’à plusieurs millions de lignes).  
+Les traitements sont réalisés via :
+- un **script Shell** (point d’entrée utilisateur),
+- un **programme en langage C** optimisé pour les performances et la gestion mémoire.
 
-Le projet **C-WildWater** est une application combinant **un script Shell** et **un programme en langage C** permettant d’analyser et de synthétiser les données d’un **réseau de distribution d’eau potable**.
-
-À partir d’un fichier de données CSV volumineux fourni par l’enseignante, le programme permet :
-- d’analyser les performances des usines de traitement,
-- de calculer les volumes d’eau captés, réellement traités et perdus,
-- de générer des fichiers de résultats,
-- de produire des histogrammes exploitables.
-
-Les données sont factices mais respectent les ordres de grandeur d’un réseau réel.
-
-```
-
-📌 **Important** : le fichier `c-wildwater_v3.dat` n’est pas fourni dans le dépôt.  
-Il doit être **copié manuellement** par l’enseignante dans le dossier du projet.
+Le projet respecte strictement les contraintes pédagogiques imposées (C + Shell, AVL, Makefile, robustesse).
 
 ---
 
-## 🛠️ Installation
+## 🗂️ Arborescence du projet
 
-1. Cloner ou télécharger le projet.
-2. Ouvrir un terminal et se placer dans le dossier du projet.
-3. Compiler le programme C :
+> ⚠️ Pour des raisons de simplicité, **tous les fichiers sont placés à la racine du projet**.
+
+```
+C-WildWater/
+├── main.c
+├── csv_reader.c / csv_reader.h
+├── avl.c / avl.h
+├── tree.c / tree.h
+├── calculations.c / calculations.h
+├── utils.c / utils.h
+├── script.sh
+├── Makefile
+├── README.md
+├── Projet_C-WildWater.pdf
+└── tests/
+    ├── fichiers_resultats/
+    └── images/
+```
+
+---
+
+## ⚙️ Compilation
+
+La compilation se fait exclusivement via **Make**, conformément au sujet.
 
 ```bash
 make
 ```
 
-4. Donner les droits d’exécution au script **et au fichier de données** :
-
+Pour nettoyer les fichiers générés :
 ```bash
-chmod +x script.sh
-chmod +x c-wildwater_v3.dat
+make clean
 ```
 
 ---
 
-## ▶️ Utilisation
+## 🚀 Utilisation
+
+Le point d’entrée est le script Shell :
+
+```bash
+./script.sh <fichier_donnees.csv> <commande> [option]
+```
 
 ### 📊 Histogrammes des usines
 
 ```bash
-./script.sh c-wildwater_v3.dat histo max
-./script.sh c-wildwater_v3.dat histo src
-./script.sh c-wildwater_v3.dat histo real
+./script.sh wildwater.dat histo max
+./script.sh wildwater.dat histo src
+./script.sh wildwater.dat histo real
 ```
 
-⏳ **Temps d’exécution** :  
-Pour les commandes `histo max`, `histo src` et `histo real`,  
-⏱️ **le temps de traitement peut aller jusqu’à 15 secondes maximum** selon la machine.
+- `max`  : capacité maximale de traitement  
+- `src`  : volume total capté depuis les sources  
+- `real` : volume réellement traité après fuites  
 
-- `max`  : capacité maximale de traitement des usines  
-- `src`  : volume total capté par les sources  
-- `real` : volume réellement traité après pertes  
-
-Le script génère :
-- un fichier de données CSV,
-- deux histogrammes :
-  - les **50 plus petites usines**,
-  - les **10 plus grandes usines**.
-
-Les fichiers sont sauvegardés dans le dossier `output/`.
+📁 Génère :
+- un fichier de données (.dat / .csv)
+- deux images PNG (50 plus petites / 10 plus grandes usines)
 
 ---
 
-### 🚰 Calcul des pertes d’eau (leaks)
+### 💧 Calcul des fuites d’une usine
 
 ```bash
-./script.sh c-wildwater_v3.dat leaks "Facility complex #RH400057F"
+./script.sh wildwater.dat leaks "Facility complex #RH400057F"
 ```
 
-- Calcule le **volume total d’eau perdu** sur l’ensemble du réseau aval de l’usine.
-- Résultat exprimé en **millions de m³ (M.m³)**.
-- Si l’identifiant de l’usine n’existe pas, la valeur `-1` est retournée.
-- Les résultats sont ajoutés à un fichier historique `.dat`.
+Résultat :
+- volume total d’eau perdue (en M.m³/an)
+- ajout dans un fichier historique `.dat`
+
+⚠️ Si l’identifiant est inexistant → résultat `-1`.
 
 ---
 
-## 🎯 Fonctionnalités
+## 🧠 Choix techniques
 
-- Lecture et traitement de fichiers CSV très volumineux
-- Analyse des performances des usines de traitement
-- Calcul des volumes :
-  - captés,
-  - réellement traités,
-  - perdus (fuites)
-- Génération de fichiers de résultats triés
-- Création d’histogrammes (PNG)
-- Gestion robuste des erreurs et des arguments
-- Optimisation des performances (structures adaptées)
+### 🔹 Structures de données
+- **AVL** :
+  - accès rapide aux informations des usines
+  - évite des recherches lentes sur de gros fichiers
+- **Arbre de distribution** :
+  - représentation du réseau aval
+  - enfants stockés via listes chaînées
+
+Ces choix permettent :
+- de garder des temps de calcul raisonnables
+- de traiter des fichiers de grande taille sans ralentissements excessifs
 
 ---
 
-## 📚 Documentation
+## 🛡️ Robustesse & erreurs
+- Vérification systématique des arguments
+- Codes de retour strictement positifs en cas d’erreur
+- Aucun arrêt brutal (segmentation fault)
+- Données invalides détectées et gérées
 
-- `rapport.pdf` :
-  - description du projet,
-  - choix techniques,
-  - structures de données utilisées,
-  - répartition des tâches,
-  - limitations fonctionnelles,
-  - exemples d’exécution.
+---
+
+## 🧪 Tests
+Le dossier `tests/` contient :
+- exemples de fichiers générés
+- images PNG produites
+- résultats reproductibles pour la correction
+
+---
+
+## 📄 Documentation complémentaire
+Le fichier **Projet_C-WildWater.pdf** contient :
+- la répartition des tâches
+- le planning du projet
+- les limitations fonctionnelles
+
+---
+
+## ⚠️ Limitations connues
+- Bonus non implémentés (histogramme cumulé, plus grosse fuite)
+- Optimisations mémoire possibles sur très gros fichiers
+- Messages d’erreur perfectibles dans certains cas limites
 
 ---
 
 ## 👥 Auteurs
-
-Projet réalisé dans le cadre du cursus **préING2 – 2025/2026**.
-
-- Kenza Boualili  
-- Shahd Eish  
-- Tenzin Dadon  
-
-Encadrants pédagogiques :
-- Eva Ansermin  
-- Romuald Grignon  
+- Étudiants préING2 — CY Tech  
+- Projet réalisé dans un cadre pédagogique (2025–2026)
 
 ---
 
-## 📄 Licence
+## ✅ Conformité au sujet
+✔ Langage C obligatoire respecté  
+✔ Script Shell comme point d’entrée  
+✔ AVL utilisés conformément aux consignes  
+✔ Makefile présent  
+✔ Projet générique (non codé en dur)
 
-Projet académique — usage pédagogique uniquement.
+---
+
+> 📢 **Remarque** : Ce programme a été conçu pour fonctionner avec n’importe quel fichier CSV respectant la structure du sujet, y compris lors d’une évaluation avec un fichier différent.
+
