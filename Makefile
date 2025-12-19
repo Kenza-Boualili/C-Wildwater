@@ -33,8 +33,9 @@ clean:
 
 # Nettoyage des fichiers de sortie dans le dossier output
 cleanfile:
-	rm -f output/*.dat output/*.png output/*.log output/*.tmp output/*.gp
-
+	rm -f output/histo/*.dat output/histo/*.png output/histo/*.tmp output/histo/*.gp
+	rm -f output/leaks/*.dat output/leaks/*.log
+	rm -f output/*.log output/*.tmp
 # Nettoyage complet
 cleanall: clean cleanfile
 	rm -rf $(BINDIR)
