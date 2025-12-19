@@ -1,14 +1,17 @@
 #!/bin/bash
 
 # Configuration
-PROGRAMME_C="./c-wildwater"
-debut=$(date +%s%3N)
+PROGRAMME_C="./c-wildwater" 
+CSV_FILTRE="temp_filtre.csv" # Fichier temporaire pour le filtrage
+debut=$(date +%s%3N)        # Capture du temps de début en millisecondes (%3N)
 
-# Export pour s'assurer que le point est utilisé comme séparateur décimal
+# on force l'utilisation du point '.' comme séparateur décimal ( sa évite les bugs avec la virgule)
 export LC_NUMERIC=C
+
 
 erreur() {
     echo "[Erreur] $1" >&2
+    rm -f "$CSV_FILTRE" # Nettoyage en cas d'erreur
     duree_totale
     exit 1
 }
@@ -18,174 +21,138 @@ duree_totale() {
     echo "Durée totale : $((fin - debut)) ms"
 }
 
+# Affiche les instructions d'utilisation si les arguments sont incorrects
 usage() {
-    echo "Usage : $0 <csv> <commande> [argument]"
-    echo "Commandes :"
-    echo "  histo max   : capacité maximale"
-    echo "  histo src   : volume capté"
-    echo "  histo real  : volume traité"
-    echo "  leaks <ID>  : calcul des fuites"
+    echo "Usage : $0 <csv> <histo|leaks> <argument>"
     duree_totale
     exit 1
 }
 
+# Vérifie si le fichier CSV source existe bien avant de commencer
 verifier_fichier() {
     [ ! -f "$CSV" ] && erreur "Le fichier CSV '$CSV' est introuvable."
 }
 
+# on compile le programme C avec 'make' s'il n'existe pas encore
 verifier_compilation() {
     if [ ! -f "$PROGRAMME_C" ]; then
-        echo "Compilation du programme C via Makefile..."
+        echo "Compilation du programme C..."
         make || erreur "Échec de la compilation."
     fi
 }
 
+# Récupère le nom du fichier généré par le programme C en parsant ses logs de sortie
 extraire_fichier_genere() {
-    # On cherche la ligne FICHIER_GENERE dans la sortie du programme
-    grep "FICHIER_GENERE:" programme_sortie.log | cut -d':' -f2 | tr -d '\r '
+    grep "FICHIER_GENERE:" programme_sortie.log \ | cut -d':' -f2 \ | tr -d '\r '
 }
 
 generer_png() {
-    fichier_dat=$1
-    type=$2
-
-    [ ! -f "$fichier_dat" ] && erreur "Le fichier de données '$fichier_dat' n'existe pas."
+    fichier_dat="$1"
+    type="$2"
+    [ ! -f "$fichier_dat" ] && erreur "Fichier '$fichier_dat' introuvable."
     base="${fichier_dat%.*}"
-
-    # Adaptation dynamique des titres et labels selon le type
-    case $type in
-        max)  
-            titre="Capacité maximale" 
-            label_y="Capacité (M.m3/an)"
-            legende="Capacité"
-            ;;
-        src)  
-            titre="Volume capté" 
-            label_y="Volume (M.m3/an)"
-            legende="Volume capté"
-            ;;
-        real) 
-            titre="Volume traité" 
-            label_y="Volume (M.m3/an)"
-            legende="Volume traité"
-            ;;
-        *) 
-            titre="Analyse Usines" 
-            label_y="Volume (M.m3/an)"
-            legende="Volume"
-            ;;
+    case "$type" in
+        max) titre="Capacité maximale"; label_y="Capacité (M.m3/an)"; legende="Capacité"; col_tri=2 ;;
+        src) titre="Volume capté"; label_y="Volume (M.m3/an)"; legende="Volume capté"; col_tri=3 ;;
+        real) titre="Volume traité"; label_y="Volume (M.m3/an)"; legende="Volume traité"; col_tri=3 ;;
+        *) erreur "Type d'histogramme inconnu" ;;
     esac
+    echo " Génération de l'image : ${base}.png"
 
-    echo "Génération de l'image combinée (Top 10 & Top 50)..."
+# Noms des fichiers temporaires pour le tri
+    data_tmp="${base}_data.tmp"
+    sorted_tmp="${base}_sorted.tmp"
+    small_f="${base}_small.tmp"
+    big_f="${base}_big.tmp"
+    gp_script="${base}_plot.gp"
 
-    # Fichiers temporaires pour le tri et Gnuplot
-    head_f="$fichier_dat.header"
-    tri_f="$fichier_dat.sorted"
-    small_f="$fichier_dat.small"
-    big_f="$fichier_dat.big"
-    gp_script="plot_temp.gp"
+#On enlève l'en-tête pour ne garder que les données
+    tail -n +2 "$fichier_dat" > "$data_tmp"
 
-    # Préparation des données : tri numérique par volume (colonne 2)
-    head -n 1 "$fichier_dat" > "$head_f"
-    tail -n +2 "$fichier_dat" | sort -t";" -k2,2g > "$tri_f"
+#Tri numérique (-g) sur la colonne choisie avec le séparateur ';'
+    sort -t";" -k3,3g "$data_tmp" > "$sorted_tmp"
 
-    # Extraction des 50 plus petites et 10 plus grandes usines
-    head -n 50 "$tri_f" > "$small_f"
-    tail -n 10 "$tri_f" > "$big_f"
+#On isole les 50 plus petites et les 10 plus grandes usines
+    head -n 50 "$sorted_tmp" > "$small_f"
+    tail -n 10 "$sorted_tmp" > "$big_f"
 
-    # Génération du script Gnuplot pour une image unique (Multiplot)
-    cat << EOF > "$gp_script"
-set terminal png size 1000,1400 font "Arial,10"
-set output '${base}_combined.png'
-set datafile separator ';'
+#Création du script de commande pour Gnuplot
+cat > "$gp_script" << EOF
+set terminal png size 1200,1400 font "Arial,10"
+set output "${base}.png"
+set datafile separator ";"
 set style fill solid 0.7 border -1
-set ylabel '$label_y'
+set ylabel "$label_y"
 set grid y
-
-set multiplot layout 2,1 title "Projet C-WildWater : ${titre}\n" font "Arial,16"
-
-# GRAPHE 1 : Les 10 plus grandes usines (Top 10)
-set title "Top 10 : Plus grandes usines" font "Arial,12"
+set yrange [0:*]
+set boxwidth 0.7 relative
+set multiplot layout 2,1 title "Projet C-WildWater : $titre" font "Arial,16"
+set title "10 plus grandes usines (référence: capacité)"
 set xtics rotate by -45
-plot '$big_f' using 2:xtic(1) with boxes lc rgb "#1f77b4" title "$legende"
-
-# GRAPHE 2 : Les 50 plus petites usines (Top 50)
-set title "Top 50 : Plus petites usines" font "Arial,12"
+plot "$big_f" using (\$2/1000.0):xtic(1) with boxes lc rgb "#1f77b4" title "$legende"
+set title "50 plus petites usines (référence: capacité)"
 set xtics rotate by -90 font "Arial,7"
-plot '$small_f' using 2:xtic(1) with boxes lc rgb "#2ca02c" title "$legende"
-
+plot "$small_f" using (\$2/1000.0):xtic(1) with boxes lc rgb "#1f77b4" notitle
 unset multiplot
 EOF
 
-    # Exécution de Gnuplot
+#Exécution de Gnuplot et nettoyage des fichiers temporaires
     if command -v gnuplot >/dev/null 2>&1; then
         gnuplot "$gp_script"
-        echo "✅ Image générée : ${base}_combined.png"
-    else
-        echo "⚠ Gnuplot non trouvé. Seul le fichier .dat est conservé."
     fi
-
-    # Nettoyage des fichiers temporaires
-    rm -f "$head_f" "$tri_f" "$small_f" "$big_f" "$gp_script"
+    rm -f "$data_tmp" "$sorted_tmp" "$small_f" "$big_f" "$gp_script"
 }
 
-traitement_histo() {
-    local type_val=$1
-    # On redirige la sortie pour capturer le nom du fichier généré
-    $PROGRAMME_C "$CSV" histo "$type_val" > programme_sortie.log 2>&1
-    ret=$?
-    [ $ret -ne 0 ] && erreur "Le programme C a échoué (code $ret)."
 
-    fichier_genere=$(extraire_fichier_genere)
-    if [ -f "$fichier_genere" ]; then
-        generer_png "$fichier_genere" "$type_val"
-    else
-        erreur "Le fichier .dat n'a pas pu être localisé."
-    fi
+traitement_histo() {
+    local type="$1"
+    
+    # grep -E : cherche les lignes contenant "Spring", "Source" ou ";-;" (les usines)
+    # - | envoie le résultat directement au programme C
+    # le "-" dit au C de lire ce qui vient du pipe
+    # - > programme_sortie.log 2>&1 : envoie tous les messages (erreurs et infos) dans un fichier log
+    grep -E "Spring|Source|;-;" "$CSV" | $PROGRAMME_C - histo "$type" > programme_sortie.log 2>&1
+    
+
+    # PIPESTATUS[1] regarde si le programme C a réussi
+    # Si c'est différent de 0 on appelle la fonction erreur.
+    [ ${PIPESTATUS[1]} -ne 0 ] && erreur "Le programme C a échoué."
+
+# On appelle la fonction pour savoir quel fichier .dat a été créé
+    fichier_dat=$(extraire_fichier_genere)
+
+# On lance Gnuplot pour transformer les données .dat en graphique .png
+    generer_png "$fichier_dat" "$type"
 }
 
 traitement_leaks() {
-    local id_usine=$1
-    $PROGRAMME_C "$CSV" leaks "$id_usine" > programme_sortie.log 2>&1
-    fichier_genere=$(extraire_fichier_genere)
-    if [ -f "$fichier_genere" ]; then
-        echo "Résultat de la recherche de fuites :"
-        cat "$fichier_genere"
-    else
-        erreur "Résultat de fuites introuvable."
-    fi
+    #On récupère l'identifiant de l'usine passé en argument
+    local id="$1"
+    
+    # - grep -F : Recherche très rapide, on extrait toutes les lignes 
+    # - | : Le PIPE envoie ces lignes (contenant de l'id) directement au programme C
+    # - $PROGRAMME_C - : Le "-" indique au programme C de lire les données 
+    # depuis le flux entrant (le pipe) au lieu d'ouvrir lui-même le gros fichier
+    grep -F "$id" "$CSV" | $PROGRAMME_C - leaks "$id" > programme_sortie.log 2>&1
+    
+  [ ${PIPESTATUS[1]} -ne 0 ] && erreur "Le programme C a échoué."
+
+    fichier_dat=$(extraire_fichier_genere)
+    cat "$fichier_dat"
 }
 
-# --- Point d'entrée du script ---
-
-# Vérification minimale : on attend au moins <csv> et <commande>
+# point d'entrée
 [ $# -lt 2 ] && usage
-
 CSV="$1"
-shift # On retire le CSV des arguments, $1 devient la commande
-
+shift 
 verifier_fichier
 verifier_compilation
 
-case $1 in
-    histo)
-        # Vérifie qu'on a bien l'argument type (max, src, real)
-        if [ -z "$1" ] || [ -z "$2" ]; then
-             usage
-        fi
-        traitement_histo "$2"
-        ;;
-    leaks)
-        # Vérifie qu'on a bien l'identifiant de l'usine
-        if [ -z "$1" ] || [ -z "$2" ]; then
-             usage
-        fi
-        traitement_leaks "$2"
-        ;;
-    *)
-        usage
-        ;;
+case "$1" in
+    histo) [ -z "$2" ] && usage; traitement_histo "$2" ;;
+    leaks) [ -z "$2" ] && usage; traitement_leaks "$2" ;;
+    *) usage ;;
 esac
 
 duree_totale
-exit 0
+exit 0 
