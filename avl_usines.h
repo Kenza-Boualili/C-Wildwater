@@ -1,16 +1,19 @@
-#ifndef AVL_RECHERCHE_H
-#define AVL_RECHERCHE_H
+#ifndef AVL_USINES_H
+#define AVL_USINES_H
 #include "structures.h"
+#include <stdio.h>
+#include "utils.h"
 
-
-NoeudAVLRecherche* creerNoeudAVLRecherche(char* identifiant, NoeudDistribution* noeud);
-void libererAVLRecherche(NoeudAVLRecherche* racine);
-int hauteurAVLRecherche(NoeudAVLRecherche* noeud);
-NoeudAVLRecherche* equilibrerAVLRecherche(NoeudAVLRecherche* racine);
-NoeudAVLRecherche* rotationGaucheRecherche(NoeudAVLRecherche* x);
-NoeudAVLRecherche* rotationDroiteRecherche(NoeudAVLRecherche* y);
-NoeudAVLRecherche* insererAVLRecherche(NoeudAVLRecherche* racine, char* identifiant, NoeudDistribution* noeud);
-NoeudDistribution* rechercherNoeud(NoeudAVLRecherche* racine, char* identifiant);
-void libererArbreDistribution(NoeudDistribution* racine);
+NoeudAVLUsine* creerNoeudAVLUsine(DonneesUsine* donnees);
+void libererAVLUsine(NoeudAVLUsine* racine);
+int hauteurAVLUsine(NoeudAVLUsine* noeud);
+int equilibreAVLUsine(NoeudAVLUsine* noeud);
+NoeudAVLUsine* equilibrerAVLUsine(NoeudAVLUsine* racine);
+NoeudAVLUsine* rotationGaucheUsine(NoeudAVLUsine* racine);
+NoeudAVLUsine* rotationDroiteUsine(NoeudAVLUsine* racine);
+NoeudAVLUsine* insererAVLUsine(NoeudAVLUsine* racine, DonneesUsine* donnees);
+DonneesUsine* rechercherUsine(NoeudAVLUsine* racine, char* identifiant);
+void plafonnerVolumesUsines(NoeudAVLUsine* racine);
+void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_histo);
 
 #endif
