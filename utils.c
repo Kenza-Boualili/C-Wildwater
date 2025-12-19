@@ -1,37 +1,53 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2
-TARGET = c-wildwater
-OBJS = main.o avl_usines.o avl_recherche.o utils.o lecture_csv.o calculs.o
+#include "utils.h"
+#include <string.h>
+#include <stdlib.h> 
 
-all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+//Compare deux chaînes de caractères.
+//Retourne 0 si les chaînes sont identiques (ou toutes les deux NULL)
 
-main.o: main.c avl_usines.h avl_recherche.h lecture_csv.h utils.h calculs.h
-	$(CC) $(CFLAGS) -c main.c
+int comparerChaines(char* chaine1, char* chaine2) {
+    //  même adresse ou NULL
+    if (chaine1 == chaine2) {
+        return 0;  // Même chaîne ou toutes les deux NULL
+    }
+    if (chaine1 == NULL) {
+        return -1; // NULL est plus petit
+    }
+    if (chaine2 == NULL) {
+        return 1;  // Toute chaîne non NULL est plus grande que NULL
+    }
+    
+    // Utilisation de strcmp pour la comparaison
+    return strcmp(chaine1, chaine2);
+}
 
-avl_usines.o: avl_usines.c avl_usines.h utils.h
-	$(CC) $(CFLAGS) -c avl_usines.c
+char* dupliquerChaine(char* source) {
+    //On vérifie le paramètre d'entrée
+    if (source == NULL) {
+        return NULL;
+    }
+    
+    // On calcule la longueur de la chaîne source
+    size_t longueur = strlen(source);
+    
+    // On alloue la mémoire pour la copie (+1 pour le caractère nul)
+    char* copie = malloc((longueur + 1) * sizeof(char));
+    if (copie == NULL) {
+        return NULL;  // Échec de l'allocation
+    }
+    
+    // Copie du contenu de la chaîne source vers la nouvelle zone mémoire
+    strcpy(copie, source);
+    
+    return copie;
+}
 
-avl_recherche.o: avl_recherche.c avl_recherche.h utils.h
-	$(CC) $(CFLAGS) -c avl_recherche.c
-
-utils.o: utils.c utils.h
-	$(CC) $(CFLAGS) -c utils.c
-
-lecture_csv.o: lecture_csv.c lecture_csv.h avl_usines.h avl_recherche.h utils.h
-	$(CC) $(CFLAGS) -c lecture_csv.c
-
-calculs.o: calculs.c calculs.h avl_recherche.h
-	$(CC) $(CFLAGS) -c calculs.c
-
-clean:
-	rm -f $(OBJS) $(TARGET)
-
-cleanfile:
-	rm -f *.dat *.log *.png *.tmp *.gp
-
-cleanall: clean cleanfile
-
-.PHONY: all clean cleanfile cleanall
+// Retourne le maximum de deux entiers.
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
