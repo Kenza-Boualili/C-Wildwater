@@ -43,7 +43,7 @@ verifier_compilation() {
 
 # Récupère le nom du fichier généré par le programme C en parsant ses logs de sortie
 extraire_fichier_genere() {
-    grep "FICHIER_GENERE:" programme_sortie.log \ | cut -d':' -f2 \ | tr -d '\r '
+    grep "FICHIER_GENERE:" programme_sortie.log | cut -d':' -f2 | tr -d '\r '
 }
 
 generer_png() {
