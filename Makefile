@@ -1,22 +1,37 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2
-OBJ = main.o avl_usines.o avl_recherche.o utils.o lecture_csv.o calculs.o
-EXEC = c-wildwater
+TARGET = c-wildwater
+OBJS = main.o avl_usines.o avl_recherche.o utils.o lecture_csv.o calculs.o
 
-all: $(EXEC)
+all: $(TARGET)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
-$(EXEC): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(EXEC)
+main.o: main.c avl_usines.h avl_recherche.h lecture_csv.h utils.h calculs.h
+	$(CC) $(CFLAGS) -c main.c
+
+avl_usines.o: avl_usines.c avl_usines.h utils.h
+	$(CC) $(CFLAGS) -c avl_usines.c
+
+avl_recherche.o: avl_recherche.c avl_recherche.h utils.h
+	$(CC) $(CFLAGS) -c avl_recherche.c
+
+utils.o: utils.c utils.h
+	$(CC) $(CFLAGS) -c utils.c
+
+lecture_csv.o: lecture_csv.c lecture_csv.h avl_usines.h avl_recherche.h utils.h
+	$(CC) $(CFLAGS) -c lecture_csv.c
+
+calculs.o: calculs.c calculs.h avl_recherche.h
+	$(CC) $(CFLAGS) -c calculs.c
 
 clean:
-	rm -f *.o $(EXEC)
+	rm -f $(OBJS) $(TARGET)
 
 cleanfile:
-	rm -f vol_max_*.dat vol_captation_*.dat vol_traitement_*.dat
-	rm -f vol_all_*.dat leaks_*.dat *.png *.sorted *.header *.small *.big
+	rm -f *.dat *.log *.png *.tmp *.gp
 
-.PHONY: all clean cleanfile
+cleanall: clean cleanfile
 
+.PHONY: all clean cleanfile cleanall
