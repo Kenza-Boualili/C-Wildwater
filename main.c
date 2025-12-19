@@ -1,15 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
+
 #include "avl_usines.h"
 #include "avl_recherche.h"
 #include "lecture_csv.h"
 #include "utils.h"
 #include "calculs.h"
 
-char *generer_nom_fichier(char *prefixe) {
-    time_t maintenant = time(NULL);  
-    char *nom = malloc(100);        
+// Génère un nom de fichier unique basé sur le temps
+char* generer_nom_fichier(char* prefixe) {
+    time_t maintenant = time(NULL);
+    char* nom = malloc(100);
     if (nom == NULL) {
         return NULL;
     }
@@ -17,154 +20,176 @@ char *generer_nom_fichier(char *prefixe) {
     return nom;
 }
 
-int main(int nombre_arguments, char* arguments[]) {
-    if(nombre_arguments != 4) {
-        printf("Usage: %s <csv> <histo|leaks> <argument>\n", arguments[0]);
-        return 1;
+// Convertit le type d'histogramme en valeur numérique
+int get_type_histo(char* argument) {
+    if (argument == NULL) {
+        return -1;
     }
+
+    switch(argument[0]) {
+     case 'm': // max
+    if (strcmp(argument, "max") == 0) {
+     return 0;
+    }
+    break;
+    case 's': // src
+    if (strcmp(argument, "src") == 0) {
+    return 1;
+    }
+     break;
+    case 'r': // real
+    if (strcmp(argument, "real") == 0) {
+    return 2;
+    }
+     break;
+    }
+    return -1;
+}
+
+int main(int argc, char* argv[]) {
+    // Vérification du nombre d'arguments
+    if (argc != 4) {
+    printf("Usage: %s <csv> <histo|leaks> <argument>\n", argv[0]);
+    return 1;
+    }
+
+    char* fichier_arg = argv[1]; // Nom du fichier ou "-" pour le pipe
+    char* commande    = argv[2]; // histo ou leaks
+    char* argument    = argv[3]; // type d'histo ou ID usine
+
+    FILE* flux_entree = NULL;
     
-    char* fichier_csv = arguments[1];
-    char* commande = arguments[2];
-    char* argument = arguments[3];
+    // Initialisation du flux d'entrée (Pipe ou Fichier)
+    if (strcmp(fichier_arg, "-") == 0) {
+    flux_entree = stdin; // Lecture directe depuis le pipe de notre script shell
+    } else {
+    flux_entree = fopen(fichier_arg, "r");
+    }
+    if (flux_entree == NULL) {
+    fprintf(stderr, "Erreur: impossible d'ouvrir le flux d'entrée %s\n", fichier_arg);
+    return 1;
+    }
 
     NoeudAVLUsine* avl_usines = NULL;
     NoeudAVLRecherche* avl_recherche = NULL;
-    NoeudDistribution* racine_distribution = NULL;
-    
-    if(charger_csv(fichier_csv, &avl_usines, &avl_recherche) != 0) {
-        return 1;
+
+    // Chargement des données avec le flux ouvert et la commande pour optimisation
+    if (charger_csv(flux_entree, &avl_usines, &avl_recherche, commande) != 0) {
+    fprintf(stderr, "Erreur lors du chargement des données\n");
+    if (flux_entree != stdin) {
+    fclose(flux_entree);
+    }
+    return 1;
+}
+
+    // On ferme le fichier seulement si il a été ouvert par fopen
+    if (flux_entree != stdin) {
+    fclose(flux_entree);
     }
 
-    if (avl_recherche != NULL) {
-        racine_distribution = avl_recherche->pointeur_noeud;
-        while (racine_distribution != NULL && racine_distribution->parent != NULL) {
-            racine_distribution = racine_distribution->parent;
-        }
-    }
-    
-    if(comparerChaines(commande, "histo") == 0) {
-        int type = -1;
+    // Traitement de la commande "histo"
+    if (strcmp(commande, "histo") == 0) {
+    int type = get_type_histo(argument);
+    char* prefixe = NULL;
+    char* entete = NULL;
         
-        if(comparerChaines(argument, "max") == 0) {
-            type = 0;
-        } else if(comparerChaines(argument, "src") == 0) {
-            type = 1;
-        } else if(comparerChaines(argument, "real") == 0) {
-            type = 2;
-        } else if(comparerChaines(argument, "all") == 0) {
-            type = 3;
-        }
-
-        if(type != -1) {
-            char* nom_fichier_sortie = NULL;
-            if(type == 0) {
-                nom_fichier_sortie = generer_nom_fichier("vol_max");
-            } else if(type == 1) {
-                nom_fichier_sortie = generer_nom_fichier("vol_captation");
-            } else if(type == 2) {
-                nom_fichier_sortie = generer_nom_fichier("vol_traitement");
-            } else {
-                nom_fichier_sortie = generer_nom_fichier("vol_all");
-            }
-
-            if(nom_fichier_sortie == NULL) {
-                printf("Erreur: Impossible de generer le nom du fichier\n");
-                libererAVLUsine(avl_usines);
-                libererAVLRecherche(avl_recherche);
-                return 1;
-            }
-        
-            FILE* f = fopen(nom_fichier_sortie, "w");
-            if(f == NULL) {
-                printf("Erreur: Impossible d'ouvrir le fichier %s\n", nom_fichier_sortie);
-                free(nom_fichier_sortie);
-                libererAVLUsine(avl_usines);
-                libererAVLRecherche(avl_recherche);
-                return 1;
-            }
-        
-            if(type == 0) {
-                fprintf(f, "identifier;max volume (M.m3.year-1)\n");
-            } else if(type == 1) {
-                fprintf(f, "identifier;source volume (M.m3.year-1)\n");
-            } else if(type == 2) {
-                fprintf(f, "identifier;real volume (M.m3.year-1)\n");
-            } 
-            
-            parcoursInverseAVLUsine(avl_usines, f, type);
-            fclose(f);
-            printf("FICHIER_GENERE:%s\n", nom_fichier_sortie);
-            free(nom_fichier_sortie);
-        } else {
-            printf("Erreur: type d'histogramme invalide\n");
-            libererAVLUsine(avl_usines);
-            libererAVLRecherche(avl_recherche);
-            return 1;
-        }
-
-    } else if(comparerChaines(commande, "leaks") == 0) {
-        char* id_usine = argument;
-        char* nom_fichier_sortie = generer_nom_fichier("leaks");
-        
-        if(nom_fichier_sortie == NULL) {
-            printf("Erreur: Impossible de generer le nom du fichier\n");
-            libererAVLUsine(avl_usines);
-            libererAVLRecherche(avl_recherche);
-            return 1;
-        }
-        
-        FILE* f = fopen(nom_fichier_sortie, "w");          
-        if (f == NULL) {
-            printf("Erreur : Impossible d'ecrire dans %s\n", nom_fichier_sortie);
-            free(nom_fichier_sortie);
-            libererAVLUsine(avl_usines);
-            libererAVLRecherche(avl_recherche);
-            return 1;
-        }
-        
-        fprintf(f, "identifier;Leak volume (M.m3.year-1)\n");
-        
-        NoeudDistribution* noeud_usine = rechercherNoeud(avl_recherche, id_usine);
-        DonneesUsine* infos_usine = rechercherUsine(avl_usines, id_usine);
-
-        if(noeud_usine != NULL && infos_usine != NULL) {
-            double volume_depart = infos_usine->total_traite;
-            
-            if (volume_depart <= 0) {
-                fprintf(f, "%s;0.00\n", id_usine);
-                printf("Usine %s : volume de depart nul ou negatif\n", id_usine);
-            } else {
-                double fuites_totales = 0;
-                
-                if (noeud_usine->nb_enfants > 0) {
-                    double volume_par_sortie = volume_depart / noeud_usine->nb_enfants;
-                    
-                    for(int i = 0; i < noeud_usine->nb_enfants; i++) {
-                        fuites_totales += calculerFuites(noeud_usine->enfants[i], volume_par_sortie);
-                    }
-                }
-                
-                fprintf(f, "%s;%.2f\n", id_usine, fuites_totales / 1000.0); 
-            }
-        } else {
-            fprintf(f, "%s;-1\n", id_usine);
-            printf("Usine %s introuvable (valeur -1 enregistree)\n", id_usine);
-        }
-        
-        fclose(f);
-        printf("FICHIER_GENERE:%s\n", nom_fichier_sortie);
-        free(nom_fichier_sortie);
-        
-    } else {
-        printf("Erreur: Commande inconnue '%s'\n", commande);
+        switch(type) {
+        case 0: // max
+        prefixe = "vol_max";
+        entete = "identifier;max volume (k.m3.year-1)\n";
+        break;
+         case 1: // src
+        prefixe = "vol_captation";
+        entete = "identifier;source volume (k.m3.year-1);capacity_ref\n";
+        break;
+        case 2: // real
+        prefixe = "vol_traitement";
+        entete = "identifier;real volume (k.m3.year-1);capacity_ref\n";
+        break;
+        default:
+        printf("Erreur: type d'histogramme invalide\n");
         libererAVLUsine(avl_usines);
         libererAVLRecherche(avl_recherche);
         return 1;
+        }
+
+        char* nom_fichier = generer_nom_fichier(prefixe);
+        FILE* f = fopen(nom_fichier, "w");
+        if (f != NULL) {
+            fprintf(f, "%s", entete);
+            parcoursInverseAVLUsine(avl_usines, f, type);
+            fclose(f);
+            printf("FICHIER_GENERE:%s\n", nom_fichier);
+        }
+        free(nom_fichier);
+    }
+
+    // Traitement de la commande "leaks"
+    else if (strcmp(commande, "leaks") == 0) {
+        // nom de fichier fixe pour l'historique 
+        char* nom_fichier = "leaks.dat"; 
+
+        // vérification de l'existence du fichier pour l'en-tête 
+        FILE* test_f = fopen(nom_fichier, "r");
+        int existe_deja = (test_f != NULL);
+        if (existe_deja) {
+            fclose(test_f);
+        }
+
+        // ouverture en mode "a" pour ajouter à la fin 
+        FILE* f = fopen(nom_fichier, "a");
+        if (f == NULL) {
+            printf("Erreur ouverture fichier historique %s\n", nom_fichier);
+            libererAVLUsine(avl_usines);
+            libererAVLRecherche(avl_recherche);
+            return 1;
+        }
+
+        // ecriture de l'en-tête seulement si le fichier est nouveau
+        if (!existe_deja) {
+            fprintf(f, "identifier;Leak volume (M.m3.year-1)\n");
+        }
+
+        // recherche et calcul des fuites
+        // recherche efficace via l'AVL de recherche 
+        NoeudDistribution* noeud_usine = rechercherNoeud(avl_recherche, argument);
+        DonneesUsine* infos_usine = rechercherUsine(avl_usines, argument);
+        
+        if (noeud_usine == NULL || infos_usine == NULL) {
+            // si l'usine n'est pas trouvée, on écrit -1 
+            fprintf(f, "%s;-1\n", argument);
+        } else {
+            double volume_depart = infos_usine->total_traite;
+            double fuites_totales = 0.0;
+
+            if (volume_depart > 0 && noeud_usine->nb_enfants > 0) {
+
+                // Répartition équitable entre les enfants 
+            double volume_par_sortie = volume_depart / noeud_usine->nb_enfants;
+
+            for (int i = 0; i < noeud_usine->nb_enfants; i++) {
+            LienDistribution lien = noeud_usine->enfants[i];
+            double fuite_troncon = volume_par_sortie * (lien.pourcentage_fuite / 100.0);
+                    
+                    // Somme des pertes locales et aval 
+            fuites_totales += fuite_troncon;
+            double volume_restant = volume_par_sortie - fuite_troncon;
+            if (volume_restant > 0) {
+            fuites_totales += calculerFuites(lien.enfant, volume_restant);
+            }
+        }
+    }
+            // Écriture du résultat (conversion k.m3 -> M.m3) 
+        fprintf(f, "%s;%.2f\n", argument, fuites_totales / 1000.0);
+        }
+
+        fclose(f);
+        // Affichage pour le script Shell
+        printf("FICHIER_GENERE:%s\n", nom_fichier);
     }
     
     libererAVLUsine(avl_usines);
-    libererArbreDistribution(racine_distribution);
     libererAVLRecherche(avl_recherche);
-
+    
     return 0;
 }
