@@ -57,8 +57,9 @@ generer_png() {
     type="$2"
     [ ! -f "$fichier_dat" ] && erreur "Fichier '$fichier_dat' introuvable."
 
+    dossier_cible=$(dirname "$fichier_dat")
     base_nom=$(basename "${fichier_dat%.*}")
-    image_png="$OUTPUT_DIR/${base_nom}.png"
+    image_png="$dossier_cible/${base_nom}.png"
     
     case "$type" in
         max) titre="Capacité maximale"; label_y="Capacité (M.m3/an)"; legende="Capacité"; col_tri=2 ;;
@@ -69,12 +70,12 @@ generer_png() {
     
     echo " 📊 Génération de l'image : $image_png"
 
-# Noms des fichiers temporaires pour le tri (placés dans output/)
-    data_tmp="$OUTPUT_DIR/data.tmp"
-    sorted_tmp="$OUTPUT_DIR/sorted.tmp"
-    small_f="$OUTPUT_DIR/small.tmp"
-    big_f="$OUTPUT_DIR/big.tmp"
-    gp_script="$OUTPUT_DIR/plot.gp"
+# Noms des fichiers temporaires pour le tri 
+    data_tmp="$dossier_cible/data.tmp"
+    sorted_tmp="$dossier_cible/sorted.tmp"
+    small_f="$dossier_cible/small.tmp"
+    big_f="$dossier_cible/big.tmp"
+    gp_script="$dossier_cible/plot.gp"
 
 #On enlève l'en-tête pour ne garder que les données
     tail -n +2 "$fichier_dat" > "$data_tmp"
