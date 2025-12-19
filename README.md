@@ -63,6 +63,10 @@ chmod +x c-wildwater_v3.dat
 ./script.sh c-wildwater_v3.dat histo real
 ```
 
+⏳ **Temps d’exécution** :  
+Pour les commandes `histo max`, `histo src` et `histo real`,  
+⏱️ **le temps de traitement peut aller jusqu’à 15 secondes maximum** selon la machine.
+
 - `max`  : capacité maximale de traitement des usines  
 - `src`  : volume total capté par les sources  
 - `real` : volume réellement traité après pertes  
