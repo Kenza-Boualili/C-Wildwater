@@ -75,7 +75,7 @@ Le point d’entrée est le script Shell :
 
 📁 Génère :
 - un fichier de données (.dat / .csv)
-- deux images PNG (50 plus petites / 10 plus grandes usines)
+- une images PNG contenanr 2 histogrammes (50 plus petites / 10 plus grandes usines)
 
 ---
 
