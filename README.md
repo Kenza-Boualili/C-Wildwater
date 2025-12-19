@@ -1,7 +1,8 @@
 # 🌊 C-WildWater — Projet Informatique préING2
 
 ## 📌 Description générale
-Ce projet consiste à analyser et synthétiser des données issues d’un **système de distribution d’eau potable**, à partir d’un fichier CSV volumineux (jusqu’à plusieurs millions de lignes).  
+Ce projet consiste à analyser et synthétiser des données issues d’un **système de distribution d’eau potable**, à partir d’un fichier CSV volumineux (jusqu’à plusieurs millions de lignes).
+
 Les traitements sont réalisés via :
 - un **script Shell** (point d’entrée utilisateur),
 - un **programme en langage C** optimisé pour les performances et la gestion mémoire.
@@ -26,9 +27,6 @@ C-WildWater/
 ├── Makefile
 ├── README.md
 ├── Projet_C-WildWater.pdf
-└── tests/
-    ├── fichiers_resultats/
-    └── images/
 ```
 
 ---
@@ -42,8 +40,15 @@ make
 ```
 
 Pour nettoyer les fichiers générés :
+
 ```bash
 make clean
+```
+
+Pour nettoyer **tous les fichiers générés automatiquement** (binaires, fichiers temporaires, résultats) :
+
+```bash
+make cleanfile
 ```
 
 ---
@@ -64,9 +69,9 @@ Le point d’entrée est le script Shell :
 ./script.sh wildwater.dat histo real
 ```
 
-- `max`  : capacité maximale de traitement  
-- `src`  : volume total capté depuis les sources  
-- `real` : volume réellement traité après fuites  
+- `max`  : capacité maximale de traitement
+- `src`  : volume total capté depuis les sources
+- `real` : volume réellement traité après fuites
 
 📁 Génère :
 - un fichier de données (.dat / .csv)
@@ -112,15 +117,8 @@ Ces choix permettent :
 
 ---
 
-## 🧪 Tests
-Le dossier `tests/` contient :
-- exemples de fichiers générés
-- images PNG produites
-- résultats reproductibles pour la correction
-
----
-
 ## 📄 Documentation complémentaire
+
 Le fichier **Projet_C-WildWater.pdf** contient :
 - la répartition des tâches
 - le planning du projet
@@ -138,6 +136,12 @@ Le fichier **Projet_C-WildWater.pdf** contient :
 ## 👥 Auteurs
 - Étudiants préING2 — CY Tech  
 - Projet réalisé dans un cadre pédagogique (2025–2026)
+
+---
+
+## 📜 Licence
+
+**Projet réalisé dans le cadre du cours d'informatique. Usage académique uniquement.**
 
 ---
 
