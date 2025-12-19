@@ -1,13 +1,17 @@
 #!/bin/bash
 
 # Configuration
-PROGRAMME_C="./c-wildwater" 
-CSV_FILTRE="temp_filtre.csv" # Fichier temporaire pour le filtrage
-debut=$(date +%s%3N)        # Capture du temps de début en millisecondes (%3N)
+# On pointe vers le dossier bin/ comme indiqué dans le README
+PROGRAMME_C="./bin/c-wildwater" 
+OUTPUT_DIR="output" 
+LOG_FILE="$OUTPUT_DIR/programme_sortie.log"
+debut=$(date +%s%3N)         # Capture du temps de début en millisecondes (%3N)
+
+# Création du dossier de sortie s'il n'existe pas
+mkdir -p "$OUTPUT_DIR"
 
 # on force l'utilisation du point '.' comme séparateur décimal ( sa évite les bugs avec la virgule)
 export LC_NUMERIC=C
-
 
 erreur() {
     echo "[Erreur] $1" >&2
@@ -43,28 +47,34 @@ verifier_compilation() {
 
 # Récupère le nom du fichier généré par le programme C en parsant ses logs de sortie
 extraire_fichier_genere() {
-    grep "FICHIER_GENERE:" programme_sortie.log \ | cut -d':' -f2 \ | tr -d '\r '
+    # On cherche le nom du fichier dans le log et on s'assure qu'il pointe vers output
+    nom_fichier=$(grep "FICHIER_GENERE:" "$LOG_FILE" | cut -d':' -f2 | tr -d '\r ')
+    echo "$OUTPUT_DIR/$nom_fichier"
 }
 
 generer_png() {
     fichier_dat="$1"
     type="$2"
     [ ! -f "$fichier_dat" ] && erreur "Fichier '$fichier_dat' introuvable."
-    base="${fichier_dat%.*}"
+
+    base_nom=$(basename "${fichier_dat%.*}")
+    image_png="$OUTPUT_DIR/${base_nom}.png"
+    
     case "$type" in
         max) titre="Capacité maximale"; label_y="Capacité (M.m3/an)"; legende="Capacité"; col_tri=2 ;;
         src) titre="Volume capté"; label_y="Volume (M.m3/an)"; legende="Volume capté"; col_tri=3 ;;
         real) titre="Volume traité"; label_y="Volume (M.m3/an)"; legende="Volume traité"; col_tri=3 ;;
         *) erreur "Type d'histogramme inconnu" ;;
     esac
-    echo " Génération de l'image : ${base}.png"
+    
+    echo " 📊 Génération de l'image : $image_png"
 
-# Noms des fichiers temporaires pour le tri
-    data_tmp="${base}_data.tmp"
-    sorted_tmp="${base}_sorted.tmp"
-    small_f="${base}_small.tmp"
-    big_f="${base}_big.tmp"
-    gp_script="${base}_plot.gp"
+# Noms des fichiers temporaires pour le tri (placés dans output/)
+    data_tmp="$OUTPUT_DIR/data.tmp"
+    sorted_tmp="$OUTPUT_DIR/sorted.tmp"
+    small_f="$OUTPUT_DIR/small.tmp"
+    big_f="$OUTPUT_DIR/big.tmp"
+    gp_script="$OUTPUT_DIR/plot.gp"
 
 #On enlève l'en-tête pour ne garder que les données
     tail -n +2 "$fichier_dat" > "$data_tmp"
@@ -79,7 +89,7 @@ generer_png() {
 #Création du script de commande pour Gnuplot
 cat > "$gp_script" << EOF
 set terminal png size 1200,1400 font "Arial,10"
-set output "${base}.png"
+set output "$image_png"
 set datafile separator ";"
 set style fill solid 0.7 border -1
 set ylabel "$label_y"
@@ -89,10 +99,10 @@ set boxwidth 0.7 relative
 set multiplot layout 2,1 title "Projet C-WildWater : $titre" font "Arial,16"
 set title "10 plus grandes usines (référence: capacité)"
 set xtics rotate by -45
-plot "$big_f" using (\$2/1000.0):xtic(1) with boxes lc rgb "#1f77b4" title "$legende"
+plot "$big_f" using (\$3/1000.0):xtic(1) with boxes lc rgb "#1f77b4" title "$legende"
 set title "50 plus petites usines (référence: capacité)"
 set xtics rotate by -90 font "Arial,7"
-plot "$small_f" using (\$2/1000.0):xtic(1) with boxes lc rgb "#1f77b4" notitle
+plot "$small_f" using (\$3/1000.0):xtic(1) with boxes lc rgb "#1f77b4" notitle
 unset multiplot
 EOF
 
@@ -111,15 +121,20 @@ traitement_histo() {
     # - | envoie le résultat directement au programme C
     # le "-" dit au C de lire ce qui vient du pipe
     # - > programme_sortie.log 2>&1 : envoie tous les messages (erreurs et infos) dans un fichier log
-    grep -E "Spring|Source|;-;" "$CSV" | $PROGRAMME_C - histo "$type" > programme_sortie.log 2>&1
-    
+    grep -E "Spring|Source|;-;" "$CSV" | $PROGRAMME_C - histo "$type" > "$LOG_FILE" 2>&1
 
     # PIPESTATUS[1] regarde si le programme C a réussi
     # Si c'est différent de 0 on appelle la fonction erreur.
-    [ ${PIPESTATUS[1]} -ne 0 ] && erreur "Le programme C a échoué."
+    [ ${PIPESTATUS[1]} -ne 0 ] && erreur "Le programme C a échoué. Voir $LOG_FILE"
+
+nom_brut=$(grep "FICHIER_GENERE:" "$LOG_FILE" | cut -d':' -f2 | tr -d '\r ')
+
+if [ -f "$nom_brut" ]; then
+        mv "$nom_brut" "$OUTPUT_DIR/"
+    fi
 
 # On appelle la fonction pour savoir quel fichier .dat a été créé
-    fichier_dat=$(extraire_fichier_genere)
+    fichier_dat="$OUTPUT_DIR/$nom_brut"
 
 # On lance Gnuplot pour transformer les données .dat en graphique .png
     generer_png "$fichier_dat" "$type"
@@ -133,7 +148,7 @@ traitement_leaks() {
     # - | : Le PIPE envoie ces lignes (contenant de l'id) directement au programme C
     # - $PROGRAMME_C - : Le "-" indique au programme C de lire les données 
     # depuis le flux entrant (le pipe) au lieu d'ouvrir lui-même le gros fichier
-    grep -F "$id" "$CSV" | $PROGRAMME_C - leaks "$id" > programme_sortie.log 2>&1
+    grep -F "$id" "$CSV" | $PROGRAMME_C - leaks "$id" > "$LOG_FILE" 2>&1
     
   [ ${PIPESTATUS[1]} -ne 0 ] && erreur "Le programme C a échoué."
 
@@ -155,4 +170,4 @@ case "$1" in
 esac
 
 duree_totale
-exit 0 
+exit 0

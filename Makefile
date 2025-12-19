@@ -1,37 +1,42 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2
-TARGET = c-wildwater
-OBJS = main.o avl_usines.o avl_recherche.o utils.o lecture_csv.o calculs.o
+CFLAGS = -Wall -Wextra -std=c11 -O2 -Iinclude
+BINDIR = bin
+SRCDIR = src
+OBJDIR = obj
 
-all: $(TARGET)
+# Liste des objets avec leur chemin
+_OBJS = main.o avl_usines.o avl_recherche.o utils.o lecture_csv.o calculs.o
+OBJS = $(patsubst %,$(OBJDIR)/%,$(_OBJS))
 
+TARGET = $(BINDIR)/c-wildwater
+
+all: $(BINDIR) $(OBJDIR) $(TARGET)
+
+# Création des répertoires nécessaires
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+# Compilation de l'exécutable dans le dossier bin
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
-main.o: main.c avl_usines.h avl_recherche.h lecture_csv.h utils.h calculs.h
-	$(CC) $(CFLAGS) -c main.c
+# Règle générique pour les fichiers objets depuis src/ vers obj/
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-avl_usines.o: avl_usines.c avl_usines.h utils.h
-	$(CC) $(CFLAGS) -c avl_usines.c
-
-avl_recherche.o: avl_recherche.c avl_recherche.h utils.h
-	$(CC) $(CFLAGS) -c avl_recherche.c
-
-utils.o: utils.c utils.h
-	$(CC) $(CFLAGS) -c utils.c
-
-lecture_csv.o: lecture_csv.c lecture_csv.h avl_usines.h avl_recherche.h utils.h
-	$(CC) $(CFLAGS) -c lecture_csv.c
-
-calculs.o: calculs.c calculs.h avl_recherche.h
-	$(CC) $(CFLAGS) -c calculs.c
-
+# Nettoyage des fichiers objets
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf $(OBJDIR)
 
+# Nettoyage des fichiers de sortie dans le dossier output
 cleanfile:
-	rm -f *.dat *.log *.png *.tmp *.gp
+	rm -f output/*.dat output/*.png output/*.log output/*.tmp output/*.gp
 
+# Nettoyage complet
 cleanall: clean cleanfile
+	rm -rf $(BINDIR)
 
 .PHONY: all clean cleanfile cleanall
