@@ -116,6 +116,11 @@ EOF
 
 traitement_histo() {
     local type="$1"
+    # On définit explicitement le sous-dossier pour les histogrammes
+    local HISTO_DIR="$OUTPUT_DIR/histo"
+    
+    # On crée le dossier s'il n'existe pas encore
+    mkdir -p "$HISTO_DIR"
     
     # grep -E : cherche les lignes contenant "Spring", "Source" ou ";-;" (les usines)
     # - | envoie le résultat directement au programme C
@@ -127,16 +132,19 @@ traitement_histo() {
     # Si c'est différent de 0 on appelle la fonction erreur.
     [ ${PIPESTATUS[1]} -ne 0 ] && erreur "Le programme C a échoué. Voir $LOG_FILE"
 
-nom_brut=$(grep "FICHIER_GENERE:" "$LOG_FILE" | cut -d':' -f2 | tr -d '\r ')
+    # Extraction du nom du fichier généré
+    nom_brut=$(grep "FICHIER_GENERE:" "$LOG_FILE" | cut -d':' -f2 | tr -d '\r ')
 
-if [ -f "$nom_brut" ]; then
-        mv "$nom_brut" "$OUTPUT_DIR/"
+    # On déplace le fichier de la racine vers output/histo/
+    if [ -f "$nom_brut" ]; then
+        mv "$nom_brut" "$HISTO_DIR/"
     fi
 
-# On appelle la fonction pour savoir quel fichier .dat a été créé
-    fichier_dat="$OUTPUT_DIR/$nom_brut"
+    # On définit le chemin complet final pour le fichier .dat
+    local fichier_dat="$HISTO_DIR/$nom_brut"
 
-# On lance Gnuplot pour transformer les données .dat en graphique .png
+    # On lance Gnuplot pour transformer les données .dat en graphique .png
+    # L'image sera créée dans le même dossier que le fichier .dat
     generer_png "$fichier_dat" "$type"
 }
 
