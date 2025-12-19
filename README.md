@@ -12,21 +12,6 @@ Le projet **C-WildWater** est une application combinant **un script Shell** et *
 
 Les données sont factices mais respectent les ordres de grandeur d’un réseau réel.
 
----
-
-## 📁 Structure du projet
-
-```
-.
-├── README.md
-├── Makefile
-├── script.sh              <- Script Shell principal
-├── src/                   <- Fichiers sources C
-├── include/               <- Fichiers d’en-tête
-├── bin/                   <- Exécutable généré
-├── data/
-│   └── c-wildwater_v3.dat <- Fichier CSV (fourni par l’enseignante)
-└── output/                <- Fichiers de sortie (CSV, images, .dat)
 ```
 
 📌 **Important** : le fichier `c-wildwater_v3.dat` n’est pas fourni dans le dépôt.  
