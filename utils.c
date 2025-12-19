@@ -1,58 +1,37 @@
-#include "utils.h"
-#include <stdlib.h>
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c11 -O2
+TARGET = c-wildwater
+OBJS = main.o avl_usines.o avl_recherche.o utils.o lecture_csv.o calculs.o
 
-int comparerChaines(char* chaine1, char* chaine2) {
-    if (chaine1 == NULL && chaine2 == NULL){
-        return 0;
-    }
-    if (chaine1 == NULL){
-        return -1;
-    }
-    if (chaine2 == NULL){
-        return 1;
-    }
-    int i = 0;
-    while (chaine1[i] != '\0' && chaine2[i] != '\0') {
-        if (chaine1[i] < chaine2[i]) {
-            return -1;  
-        } else if (chaine1[i] > chaine2[i]) {
-            return 1;   
-        }
-        i++; 
-    }
-    if (chaine1[i] == '\0' && chaine2[i] == '\0') {
-        return 0; 
-    } else if (chaine1[i] == '\0') {
-        return -1; 
-    } else {
-        return 1;
-    }
-}
+all: $(TARGET)
 
-char* dupliquerChaine(char* source) {
-    if (source == NULL) {
-        return NULL;
-    }
-    
-    int longueur = 0;
-    while (source[longueur] != '\0') {
-        longueur++;
-    }
-    char* copie = malloc((longueur + 1) * sizeof(char));
-    if (copie == NULL) {
-        return NULL;
-    }
-    for (int i = 0; i <= longueur; i++) {
-        copie[i] = source[i];
-    }    
-    return copie;
-}
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
+main.o: main.c avl_usines.h avl_recherche.h lecture_csv.h utils.h calculs.h
+	$(CC) $(CFLAGS) -c main.c
 
-int max(int a, int b) {
-    if (a > b) {
-        return a;
-    } else {
-        return b;
-    }
-}
+avl_usines.o: avl_usines.c avl_usines.h utils.h
+	$(CC) $(CFLAGS) -c avl_usines.c
+
+avl_recherche.o: avl_recherche.c avl_recherche.h utils.h
+	$(CC) $(CFLAGS) -c avl_recherche.c
+
+utils.o: utils.c utils.h
+	$(CC) $(CFLAGS) -c utils.c
+
+lecture_csv.o: lecture_csv.c lecture_csv.h avl_usines.h avl_recherche.h utils.h
+	$(CC) $(CFLAGS) -c lecture_csv.c
+
+calculs.o: calculs.c calculs.h avl_recherche.h
+	$(CC) $(CFLAGS) -c calculs.c
+
+clean:
+	rm -f $(OBJS) $(TARGET)
+
+cleanfile:
+	rm -f *.dat *.log *.png *.tmp *.gp
+
+cleanall: clean cleanfile
+
+.PHONY: all clean cleanfile cleanall
