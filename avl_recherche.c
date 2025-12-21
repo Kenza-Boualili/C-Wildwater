@@ -181,3 +181,4 @@ NoeudDistribution* rechercherNoeud(NoeudAVLRecherche* racine, char* identifiant)
         return rechercherNoeud(racine->droit, identifiant); 
     }
 }
+
