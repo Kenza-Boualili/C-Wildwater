@@ -146,12 +146,12 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
     double valeur = 0.0;
     if (type_histo == 0){
         valeur = racine->donnees->capacite_max;
+    }
     else if (type_histo == 1){
         valeur = racine->donnees->total_capte;
+    }
     else if (type_histo == 2){
         valeur = racine->donnees->total_traite;
-    }
-}
 }
 
     // Écriture : ID ; Valeur (Real/Src) ; Capacité 
