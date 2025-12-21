@@ -5,3 +5,4 @@
 double calculerFuites(NoeudDistribution* noeud, double volume_arrivee);
 
 #endif
+
