@@ -33,12 +33,16 @@ void libererAVLUsine(NoeudAVLUsine* racine) {
 }
 
 int hauteurAVLUsine(NoeudAVLUsine* noeud) {
-    if (noeud == NULL) return 0;
+    if (noeud == NULL){
+        return 0;
+    }
     return noeud->hauteur;
 }
 
 int equilibreAVLUsine(NoeudAVLUsine* noeud) {
-    if (noeud == NULL) return 0;
+    if (noeud == NULL){
+        return 0;
+    }
     return hauteurAVLUsine(noeud->droit) - hauteurAVLUsine(noeud->gauche);
 }
 
@@ -140,9 +144,15 @@ void parcoursInverseAVLUsine(NoeudAVLUsine* racine, FILE* fichier, int type_hist
     parcoursInverseAVLUsine(racine->droit, fichier, type_histo);
     
     double valeur = 0.0;
-    if (type_histo == 0) valeur = racine->donnees->capacite_max;
-    else if (type_histo == 1) valeur = racine->donnees->total_capte;
-    else if (type_histo == 2) valeur = racine->donnees->total_traite;
+    if (type_histo == 0){
+        valeur = racine->donnees->capacite_max;
+    else if (type_histo == 1){
+        valeur = racine->donnees->total_capte;
+    else if (type_histo == 2){
+        valeur = racine->donnees->total_traite;
+    }
+}
+}
 
     // Écriture : ID ; Valeur (Real/Src) ; Capacité 
     fprintf(fichier, "%s;%.2f;%.2f\n", racine->donnees->identifiant, valeur, racine->donnees->capacite_max);
